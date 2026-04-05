@@ -10,6 +10,7 @@ import { Footer } from '@/components/footer'
 import { Upload, FileText, Loader2 } from 'lucide-react'
 
 export default function Dashboard() {
+  
   const router = useRouter()
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [jobDescription, setJobDescription] = useState('')

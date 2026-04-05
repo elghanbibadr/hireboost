@@ -34,6 +34,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+
+const supabase = await createClient()
+const { data, error } = await supabase.from('users').select('*').limit(1)
+console.log(data, error)
   return (
     <html lang="en">
       <body className="font-sans antialiased">
