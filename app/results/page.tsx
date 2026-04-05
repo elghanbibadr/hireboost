@@ -1,239 +1,248 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { ArrowRight, Copy, RotateCcw } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  AlertTriangle,
+  Lightbulb,
+  Star,
+  TrendingUp,
+} from 'lucide-react'
+
+interface MissingKeyword {
+  keyword: string
+  importance: 'high' | 'medium' | 'low'
+}
+
+interface ImprovedBullet {
+  original: string
+  improved: string
+}
+
+interface Suggestion {
+  content: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+interface AnalysisResult {
+  score: number
+  scoreExplanation: string
+  missingKeywords: MissingKeyword[]
+  improvedBullets: ImprovedBullet[]
+  suggestions: Suggestion[]
+  strengths: string[]
+  resumeName: string
+  analyzedAt: string
+}
+
+const importanceColor: Record<string, string> = {
+  high: 'bg-destructive/10 text-destructive border-destructive/30',
+  medium: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30',
+  low: 'bg-muted text-muted-foreground border-border',
+}
+
+const scoreColor = (score: number) => {
+  if (score >= 75) return 'text-green-600'
+  if (score >= 50) return 'text-yellow-600'
+  return 'text-destructive'
+}
+
+const scoreLabel = (score: number) => {
+  if (score >= 75) return 'Strong Match'
+  if (score >= 50) return 'Moderate Match'
+  return 'Weak Match'
+}
 
 export default function Results() {
-  const matchScore = 78
-  const missingKeywords = [
-    'Machine Learning',
-    'Python',
-    'AWS',
-    'Data Pipeline',
-    'TensorFlow',
-    'ETL',
-  ]
+  const router = useRouter()
+  const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [expandedBullet, setExpandedBullet] = useState<number | null>(null)
 
-  const suggestions = [
-    {
-      original: 'Developed web applications',
-      improved: 'Built scalable web applications using React and Node.js, resulting in 40% faster load times',
-      category: 'Impact'
-    },
-    {
-      original: 'Managed team of developers',
-      improved: 'Led cross-functional team of 8 engineers, delivering 5 major features on-time and 20% under budget',
-      category: 'Leadership'
-    },
-    {
-      original: 'Improved system performance',
-      improved: 'Optimized database queries and implemented caching strategy, reducing API response time by 60%',
-      category: 'Achievement'
-    },
-    {
-      original: 'Worked with cloud services',
-      improved: 'Architected and deployed microservices on AWS, managing 99.99% uptime for production infrastructure',
-      category: 'Technical'
-    },
-  ]
+  useEffect(() => {
+    const stored = sessionStorage.getItem('analysisResult')
+    if (!stored) {
+      router.replace('/dashboard')
+      return
+    }
+    try {
+      setResult(JSON.parse(stored))
+    } catch {
+      router.replace('/dashboard')
+    }
+  }, [router])
 
-  const improvementBullets = [
-    'Leverage the missing keywords naturally throughout your experience section',
-    'Quantify achievements with specific metrics and percentages',
-    'Use action verbs to start each bullet point',
-    'Highlight technical skills that match the job description',
-    'Keep bullets to 1-2 lines for better readability',
-  ]
+  if (!result) return null
+
+  const circumference = 2 * Math.PI * 54
+  const dashOffset = circumference - (result.score / 100) * circumference
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <main className="flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Analysis Results
-          </h1>
-          <p className="text-foreground/70">
-            Review your resume match and AI suggestions below
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground mb-3 transition">
+              <ArrowLeft className="h-4 w-4" /> Analyze another resume
+            </Link>
+            <h1 className="text-3xl font-bold text-foreground">Analysis Results</h1>
+            <p className="text-sm text-foreground/60 mt-1">
+              {result.resumeName} · {new Date(result.analyzedAt).toLocaleString()}
+            </p>
+          </div>
         </div>
 
-        {/* Match Score Card */}
-        <Card className="p-8 md:p-12 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <div className="md:col-span-2">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Match Score</h2>
-              <p className="text-foreground/70 mb-4">
-                Your resume matches {matchScore}% of the key requirements for this position
-              </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
-                  Strong Match
-                </Badge>
-                <Badge variant="outline">
-                  Ready to Apply
-                </Badge>
-              </div>
+        {/* Score Card */}
+        <Card className="p-8 mb-6 flex flex-col sm:flex-row items-center gap-8">
+          {/* Circle */}
+          <div className="relative shrink-0">
+            <svg width="128" height="128" viewBox="0 0 128 128">
+              <circle cx="64" cy="64" r="54" fill="none" stroke="hsl(var(--border))" strokeWidth="10"/>
+              <circle
+                cx="64" cy="64" r="54" fill="none"
+                stroke={result.score >= 75 ? '#16a34a' : result.score >= 50 ? '#ca8a04' : '#dc2626'}
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                transform="rotate(-90 64 64)"
+                style={{ transition: 'stroke-dashoffset 1s ease' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={`text-3xl font-bold ${scoreColor(result.score)}`}>{result.score}</span>
+              <span className="text-xs text-foreground/50">/ 100</span>
             </div>
-            <div className="flex items-center justify-center">
-              <div className="relative w-40 h-40">
-                <div className="absolute inset-0 rounded-full border-8 border-primary/20"></div>
-                <div className="absolute inset-0 rounded-full border-8 border-transparent border-t-primary border-r-primary flex items-center justify-center" style={{
-                  transform: `rotate(${(matchScore / 100) * 360 - 90}deg)`,
-                  transformOrigin: 'center',
-                  background: 'conic-gradient(#486db8 0deg, #486db8 ' + ((matchScore / 100) * 360) + 'deg, transparent ' + ((matchScore / 100) * 360) + 'deg)'
-                }}>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center bg-background rounded-full">
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-primary">{matchScore}%</div>
-                    <p className="text-xs text-foreground/60">Match Score</p>
-                  </div>
-                </div>
-              </div>
+          </div>
+
+          <div>
+            <div className={`text-xl font-bold mb-2 ${scoreColor(result.score)}`}>
+              {scoreLabel(result.score)}
             </div>
+            <p className="text-foreground/70 text-sm leading-relaxed">
+              {result.scoreExplanation}
+            </p>
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+          {/* Strengths */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Star className="h-5 w-5 text-green-600" />
+              <h2 className="font-semibold text-foreground">Your Strengths</h2>
+            </div>
+            <ul className="space-y-2">
+              {result.strengths.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </Card>
+
           {/* Missing Keywords */}
-          <Card className="p-6 border border-border lg:col-span-1">
-            <h3 className="text-xl font-bold text-foreground mb-4">Missing Keywords</h3>
-            <p className="text-sm text-foreground/60 mb-4">
-              Add these skills to improve your match score
-            </p>
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <h2 className="font-semibold text-foreground">Missing Keywords</h2>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {missingKeywords.map((keyword, index) => (
-                <Badge key={index} variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30">
-                  + {keyword}
-                </Badge>
+              {result.missingKeywords.map((kw, i) => (
+                <span
+                  key={i}
+                  className={`text-xs px-2 py-1 rounded-full border font-medium ${importanceColor[kw.importance]}`}
+                >
+                  {kw.keyword}
+                </span>
               ))}
             </div>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card className="p-6 border border-border lg:col-span-2">
-            <h3 className="text-xl font-bold text-foreground mb-6">Quick Analysis</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm text-foreground/70 mb-1">Experience Match</p>
-                <p className="text-2xl font-bold text-primary">92%</p>
-              </div>
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm text-foreground/70 mb-1">Skills Match</p>
-                <p className="text-2xl font-bold text-primary">64%</p>
-              </div>
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm text-foreground/70 mb-1">Keywords Found</p>
-                <p className="text-2xl font-bold text-primary">18/24</p>
-              </div>
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm text-foreground/70 mb-1">Impact Score</p>
-                <p className="text-2xl font-bold text-primary">85%</p>
-              </div>
-            </div>
+            <p className="text-xs text-foreground/50 mt-3">
+              Add these to your resume where truthfully applicable.
+            </p>
           </Card>
         </div>
 
-        {/* Bullet Point Improvements */}
-        <Card className="p-8 mb-8 border border-border">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-foreground">Improved Bullet Points</h3>
-            <Button variant="outline" size="sm">
-              <Copy className="h-4 w-4 mr-2" />
-              Copy All
-            </Button>
+        {/* Improved Bullets */}
+        <Card className="p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold text-foreground">AI-Improved Bullet Points</h2>
           </div>
-          <p className="text-foreground/70 mb-6">
-            Replace your bullet points with these AI-improved versions to better match the job description
-          </p>
-
-          <div className="space-y-6">
-            {suggestions.map((suggestion, index) => (
-              <div key={index} className="border border-border rounded-lg p-6 hover:shadow-md transition">
-                <div className="flex items-start justify-between mb-4">
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                    {suggestion.category}
-                  </Badge>
-                  <Button variant="ghost" size="sm">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground/60 mb-1">ORIGINAL</p>
-                    <p className="text-foreground/70 line-through">
-                      {suggestion.original}
-                    </p>
+          <div className="space-y-4">
+            {result.improvedBullets.map((bullet, i) => (
+              <div key={i} className="border border-border rounded-lg overflow-hidden">
+                <button
+                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition"
+                  onClick={() => setExpandedBullet(expandedBullet === i ? null : i)}
+                >
+                  <span className="text-sm text-foreground/70 line-clamp-1 mr-4">
+                    {bullet.original}
+                  </span>
+                  <span className="text-xs text-primary shrink-0">
+                    {expandedBullet === i ? 'Hide' : 'See improved'}
+                  </span>
+                </button>
+                {expandedBullet === i && (
+                  <div className="px-4 pb-4 pt-0 border-t border-border">
+                    <p className="text-xs text-foreground/50 mb-1">Original</p>
+                    <p className="text-sm text-foreground/70 mb-3 line-through">{bullet.original}</p>
+                    <p className="text-xs text-green-600 mb-1 font-medium">Improved ✨</p>
+                    <p className="text-sm text-foreground">{bullet.improved}</p>
                   </div>
-                  <div className="border-t border-border pt-3">
-                    <p className="text-xs font-semibold text-primary mb-1">IMPROVED</p>
-                    <p className="text-foreground font-medium">
-                      {suggestion.improved}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
         </Card>
 
-        {/* General Suggestions */}
-        <Card className="p-8 mb-8 border border-border">
-          <h3 className="text-2xl font-bold text-foreground mb-6">General Suggestions</h3>
-          <ul className="space-y-4">
-            {improvementBullets.map((bullet, index) => (
-              <li key={index} className="flex items-start gap-4">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-xs text-primary font-bold">{index + 1}</span>
-                </div>
-                <p className="text-foreground/80 pt-1">{bullet}</p>
-              </li>
-            ))}
+        {/* Suggestions */}
+        <Card className="p-6 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-5 w-5 text-yellow-500" />
+            <h2 className="font-semibold text-foreground">Actionable Suggestions</h2>
+          </div>
+          <ul className="space-y-3">
+            {result.suggestions
+              .sort((a, b) => {
+                const order = { high: 0, medium: 1, low: 2 }
+                return order[a.priority] - order[b.priority]
+              })
+              .map((s, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className={`text-xs px-2 py-0.5 rounded-full border font-medium mt-0.5 shrink-0 ${importanceColor[s.priority]}`}>
+                    {s.priority}
+                  </span>
+                  <p className="text-sm text-foreground/80">{s.content}</p>
+                </li>
+              ))}
           </ul>
         </Card>
 
-        {/* CTA Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-8 border border-border flex flex-col justify-between">
-            <div>
-              <h4 className="text-xl font-bold text-foreground mb-2">Try Another Job</h4>
-              <p className="text-foreground/70 mb-4">
-                Test your resume against different job descriptions
-              </p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard" className="justify-center">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Run New Analysis
-              </Link>
-            </Button>
-          </Card>
-
-          <Card className="p-8 border border-primary/30 bg-primary/5 flex flex-col justify-between">
-            <div>
-              <h4 className="text-xl font-bold text-foreground mb-2">Get Premium Features</h4>
-              <p className="text-foreground/70 mb-4">
-                Unlock unlimited analyses and advanced suggestions
-              </p>
-            </div>
-            <Button asChild>
-              <Link href="/pricing" className="justify-center">
-                Upgrade to Pro <ArrowRight className="h-4 w-4 ml-2" />
-              </Link>
-            </Button>
-          </Card>
+        {/* CTA */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button asChild className="flex-1">
+            <Link href="/dashboard">Analyze Another Resume</Link>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={() => window.print()}>
+            Save as PDF
+          </Button>
         </div>
-      </main>
 
+      </main>
       <Footer />
     </div>
   )
