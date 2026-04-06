@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import pdfParse from 'pdf-parse'
 
+
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
@@ -23,18 +24,22 @@ export async function POST(req: NextRequest) {
 
     // ── 2. Extract text from the PDF ───────────────────────────────────────
     const arrayBuffer = await resumeFile.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    // const buffer = Buffer.from(arrayBuffer)
 
-    let cvText = ''
-    try {
-      const parsed = await pdfParse(buffer)
-      cvText = parsed.text?.trim()
-    } catch {
-      return NextResponse.json(
-        { message: 'Could not read PDF. Make sure it is a text-based PDF, not a scanned image.' },
-        { status: 422 }
-      )
-    }
+// Inside your POST handler:
+let cvText = ''
+try {
+  const arrayBuffer = await resumeFile.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  const result = await pdfParse(buffer)  // v1 accepts buffer directly
+  cvText = result.text?.trim()
+} catch {
+  return NextResponse.json(
+    { message: 'Could not read PDF. Make sure it is a text-based PDF, not a scanned image.' },
+    { status: 422 }
+  )
+}
 
     if (!cvText || cvText.length < 50) {
       return NextResponse.json(
