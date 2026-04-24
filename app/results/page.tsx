@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { Badge } from '@/components/ui/badge'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -17,9 +16,9 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-interface MissingKeyword {
-  keyword: string
-  importance: 'high' | 'medium' | 'low'
+interface Keywords {
+  matched: string[]
+  missing: string[]
 }
 
 interface ImprovedBullet {
@@ -35,7 +34,7 @@ interface Suggestion {
 interface AnalysisResult {
   score: number
   scoreExplanation: string
-  missingKeywords: MissingKeyword[]
+  keywords: Keywords
   improvedBullets: ImprovedBullet[]
   suggestions: Suggestion[]
   strengths: string[]
@@ -105,7 +104,6 @@ export default function Results() {
 
         {/* Score Card */}
         <Card className="p-8 mb-6 flex flex-col sm:flex-row items-center gap-8">
-          {/* Circle */}
           <div className="relative shrink-0">
             <svg width="128" height="128" viewBox="0 0 128 128">
               <circle cx="64" cy="64" r="54" fill="none" stroke="hsl(var(--border))" strokeWidth="10"/>
@@ -161,12 +159,12 @@ export default function Results() {
               <h2 className="font-semibold text-foreground">Missing Keywords</h2>
             </div>
             <div className="flex flex-wrap gap-2">
-              {result.missingKeywords.map((kw, i) => (
+              {result.keywords.missing.map((kw, i) => (
                 <span
                   key={i}
-                  className={`text-xs px-2 py-1 rounded-full border font-medium ${importanceColor[kw.importance]}`}
+                  className="text-xs px-2 py-1 rounded-full border font-medium bg-destructive/10 text-destructive border-destructive/30"
                 >
-                  {kw.keyword}
+                  {kw}
                 </span>
               ))}
             </div>
@@ -232,7 +230,6 @@ export default function Results() {
           </ul>
         </Card>
 
-        {/* CTA */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button asChild className="flex-1">
             <Link href="/dashboard">Analyze Another Resume</Link>

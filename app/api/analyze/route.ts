@@ -1,137 +1,94 @@
-// app/api/analyze/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import Groq from 'groq-sdk'
 import pdfParse from 'pdf-parse'
 
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export async function POST(req: NextRequest) {
   try {
-    // ── 1. Parse the multipart form data ──────────────────────────────────
     const formData = await req.formData()
-    const resumeFile = formData.get('resume') as File | null
-    const jobDescription = formData.get('jobDescription') as string | null
+    const resumeFile = formData.get('resume') as File
+    const jobDescription = formData.get('jobDescription') as string
 
     if (!resumeFile || !jobDescription) {
+      return NextResponse.json({ message: 'Missing resume or job description' }, { status: 400 })
+    }
+
+    // Extract text from PDF
+    const resumeBytes = await resumeFile.arrayBuffer()
+    const pdfData = await pdfParse(Buffer.from(resumeBytes))
+    const resumeText = pdfData.text
+
+    if (!resumeText || resumeText.trim().length < 50) {
       return NextResponse.json(
-        { message: 'Resume file and job description are required.' },
+        { message: 'Could not extract text from PDF. Make sure it is not a scanned image.' },
         { status: 400 }
       )
     }
 
-    // ── 2. Extract text from the PDF ───────────────────────────────────────
-    const arrayBuffer = await resumeFile.arrayBuffer()
-    // const buffer = Buffer.from(arrayBuffer)
-
-// Inside your POST handler:
-let cvText = ''
-try {
-  const arrayBuffer = await resumeFile.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-
-  const result = await pdfParse(buffer)  // v1 accepts buffer directly
-  cvText = result.text?.trim()
-} catch {
-  return NextResponse.json(
-    { message: 'Could not read PDF. Make sure it is a text-based PDF, not a scanned image.' },
-    { status: 422 }
-  )
-}
-
-    if (!cvText || cvText.length < 50) {
-      return NextResponse.json(
-        { message: 'Could not extract enough text from your PDF. Try a different version of your resume.' },
-        { status: 422 }
-      )
-    }
-
-    // ── 3. Build the AI prompt ─────────────────────────────────────────────
-    const prompt = `You are an expert resume coach and ATS (Applicant Tracking System) specialist.
-
-Analyze the following CV against the job description and respond with ONLY a valid JSON object — no explanation, no markdown, no backticks.
-
-CV:
-${cvText}
-
-Job Description:
-${jobDescription}
-
-Return this exact JSON structure:
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert resume analyzer. Always respond with valid JSON only. 
+No markdown, no explanation, no code fences. Just raw JSON.`,
+        },
+        {
+          role: 'user',
+          content: `Analyze this resume against the job description and return a JSON object with this EXACT structure:
 {
-  "score": <integer 0-100 representing how well the CV matches the job>,
-  "scoreExplanation": "<2 sentences explaining the score>",
-  "missingKeywords": [
-    { "keyword": "<skill or keyword>", "importance": "high" | "medium" | "low" }
-  ],
+  "score": <number 0-100>,
+  "scoreExplanation": "<2-3 sentence overall assessment of the match>",
+  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "keywords": {
+    "matched": ["<keyword found in both resume and job description>", "..."],
+    "missing": ["<important keyword from job description missing in resume>", "..."]
+  },
   "improvedBullets": [
-    { "original": "<original bullet from CV>", "improved": "<AI-improved version>" }
+    {
+      "original": "<an existing bullet point from the resume, copied verbatim>",
+      "improved": "<a stronger, more impactful rewrite of that bullet using metrics and action verbs>"
+    }
   ],
   "suggestions": [
-    { "content": "<actionable suggestion>", "priority": "high" | "medium" | "low" }
-  ],
-  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"]
+    {
+      "content": "<specific, actionable suggestion to improve the resume>",
+      "priority": "<'high' | 'medium' | 'low'>"
+    }
+  ]
 }
 
 Rules:
-- score: be realistic and strict. 70+ means genuinely strong match.
-- missingKeywords: list 5-10 important keywords/skills from the job description not found in the CV.
-- improvedBullets: pick 3-5 weak bullet points from the CV and rewrite them to be stronger (quantified, action-verb led, relevant).
-- suggestions: give 4-6 specific, actionable suggestions. Be direct and concrete.
-- strengths: list 3 things the candidate does well that match this job.
-- Respond ONLY with the JSON. No other text.`
+- improvedBullets: pick the 3 weakest bullet points from the resume and rewrite them
+- suggestions: provide at least 4 suggestions, assign priority based on impact
+- keywords.missing: only include keywords that are genuinely important for the role
+- score: be honest and calibrated; 75+ means strong match, 50-74 moderate, below 50 weak
 
-    // ── 4. Call Claude API ─────────────────────────────────────────────────
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
+RESUME:
+${resumeText}
+
+JOB DESCRIPTION:
+${jobDescription}`,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1500,
     })
 
-    const rawContent = message.content[0]
-    if (rawContent.type !== 'text') {
-      throw new Error('Unexpected response type from AI')
-    }
+    const text = completion.choices[0]?.message?.content ?? ''
+    const clean = text.replace(/```json|```/g, '').trim()
+    const analysis = JSON.parse(clean)
 
-    // ── 5. Parse and validate the JSON response ────────────────────────────
-    let analysis
-    try {
-      // Strip any accidental markdown fences if present
-      const cleaned = rawContent.text
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim()
-      analysis = JSON.parse(cleaned)
-    } catch {
-      console.error('Failed to parse AI response:', rawContent.text)
-      throw new Error('AI returned an invalid response format.')
-    }
+    // Attach metadata the Results page needs (not from LLM)
+    analysis.resumeName = resumeFile.name
+    analysis.analyzedAt = new Date().toISOString()
 
-    // Basic validation
-    if (
-      typeof analysis.score !== 'number' ||
-      !Array.isArray(analysis.missingKeywords) ||
-      !Array.isArray(analysis.improvedBullets) ||
-      !Array.isArray(analysis.suggestions)
-    ) {
-      throw new Error('AI response is missing required fields.')
-    }
-
-    // ── 6. Return the result ───────────────────────────────────────────────
-    return NextResponse.json(analysis, { status: 200 })
+    return NextResponse.json(analysis)
 
   } catch (err: unknown) {
-    console.error('[/api/analyze] Error:', err)
-    const message = err instanceof Error ? err.message : 'Unexpected server error.'
+    console.error('Analyze error:', err)
+    const message = err instanceof Error ? err.message : 'Analysis failed'
     return NextResponse.json({ message }, { status: 500 })
   }
-}
-
-// Allow larger payloads for PDF uploads (default is 4MB in Next.js)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
 }
