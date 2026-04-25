@@ -1,23 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 import pdfParse from 'pdf-parse'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData()
-    const resumeFile = formData.get('resume') as File
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+    )
+
+    // Auth check — guests allowed but get blurred results
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Credit gate for authenticated free users
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('credits, plan')
+        .eq('id', user.id)
+        .single()
+
+      if (profile && profile.credits === 0) {
+        return NextResponse.json(
+          { message: 'No credits remaining. Upgrade to Pro for unlimited analyses.' },
+          { status: 402 }
+        )
+      }
+    }
+
+    const formData       = await req.formData()
+    const resumeFile     = formData.get('resume') as File
     const jobDescription = formData.get('jobDescription') as string
 
     if (!resumeFile || !jobDescription) {
       return NextResponse.json({ message: 'Missing resume or job description' }, { status: 400 })
     }
 
-    // Extract text from PDF
     const resumeBytes = await resumeFile.arrayBuffer()
-    const pdfData = await pdfParse(Buffer.from(resumeBytes))
-    const resumeText = pdfData.text
+    const pdfData     = await pdfParse(Buffer.from(resumeBytes))
+    const resumeText  = pdfData.text
 
     if (!resumeText || resumeText.trim().length < 50) {
       return NextResponse.json(
@@ -31,8 +58,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are an expert resume analyzer. Always respond with valid JSON only. 
-No markdown, no explanation, no code fences. Just raw JSON.`,
+          content: 'You are an expert resume analyzer. Always respond with valid JSON only. No markdown, no explanation, no code fences. Just raw JSON.',
         },
         {
           role: 'user',
@@ -42,28 +68,20 @@ No markdown, no explanation, no code fences. Just raw JSON.`,
   "scoreExplanation": "<2-3 sentence overall assessment of the match>",
   "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
   "keywords": {
-    "matched": ["<keyword found in both resume and job description>", "..."],
-    "missing": ["<important keyword from job description missing in resume>", "..."]
+    "matched": ["<keyword found in both resume and job description>"],
+    "missing": ["<important keyword from job description missing in resume>"]
   },
   "improvedBullets": [
     {
-      "original": "<an existing bullet point from the resume, copied verbatim>",
-      "improved": "<a stronger, more impactful rewrite of that bullet using metrics and action verbs>"
+      "original": "<existing bullet point from resume verbatim>",
+      "improved": "<stronger rewrite with metrics and action verbs>"
     }
   ],
   "suggestions": [
-    {
-      "content": "<specific, actionable suggestion to improve the resume>",
-      "priority": "<'high' | 'medium' | 'low'>"
-    }
+    { "content": "<specific actionable suggestion>", "priority": "<'high' | 'medium' | 'low'>" }
   ]
 }
-
-Rules:
-- improvedBullets: pick the 3 weakest bullet points from the resume and rewrite them
-- suggestions: provide at least 4 suggestions, assign priority based on impact
-- keywords.missing: only include keywords that are genuinely important for the role
-- score: be honest and calibrated; 75+ means strong match, 50-74 moderate, below 50 weak
+Rules: improvedBullets = 3 weakest bullets | suggestions = 4+ with priority | score: 75+ strong, 50-74 moderate, below 50 weak
 
 RESUME:
 ${resumeText}
@@ -76,13 +94,25 @@ ${jobDescription}`,
       max_tokens: 1500,
     })
 
-    const text = completion.choices[0]?.message?.content ?? ''
-    const clean = text.replace(/```json|```/g, '').trim()
+    const raw      = completion.choices[0]?.message?.content ?? ''
+    const clean    = raw.replace(/```json|```/g, '').trim()
     const analysis = JSON.parse(clean)
 
-    // Attach metadata the Results page needs (not from LLM)
-    analysis.resumeName = resumeFile.name
-    analysis.analyzedAt = new Date().toISOString()
+    analysis.resumeName    = resumeFile.name
+    analysis.analyzedAt    = new Date().toISOString()
+    analysis.authenticated = !!user
+
+    if (user) {
+      await Promise.all([
+        supabase.from('analyses').insert({
+          user_id:     user.id,
+          resume_name: resumeFile.name,
+          score:       analysis.score,
+          result:      analysis,
+        }),
+        supabase.rpc('deduct_credit', { p_user_id: user.id }),
+      ])
+    }
 
     return NextResponse.json(analysis)
 

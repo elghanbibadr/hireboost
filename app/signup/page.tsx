@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Footer } from '@/components/footer'
 import { Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
-export default function SignUp() {
+export default  function SignUp() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,12 +20,14 @@ export default function SignUp() {
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+
+  const supabase=createClient();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit =async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match')
@@ -36,6 +39,13 @@ export default function SignUp() {
     }
     setIsLoading(true)
     // Simulate signup
+     const { data, error } = await supabase.auth.signUp({
+    email: 'valid.email@supabase.io',
+    password: 'example-password',
+    options: {
+      emailRedirectTo: 'https://example.com/welcome',
+    },
+  })
     setTimeout(() => {
       setIsLoading(false)
     }, 1000)
