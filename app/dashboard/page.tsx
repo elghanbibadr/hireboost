@@ -1,243 +1,276 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts'
+import {
+  FileText, Zap, CreditCard, TrendingUp, Clock, ChevronRight,
+  CheckCircle, Sparkles, Loader2,
+} from 'lucide-react'
+
+interface Profile {
+  plan: 'free' | 'pro'
+  credits: number
+  email: string
+  full_name: string
+  stripe_customer_id: string | null
+}
+interface Analysis {
+  id: string
+  resume_name: string
+  score: number
+  created_at: string
+}
+
+function scoreColor(n: number) {
+  if (n >= 75) return '#16a34a'
+  if (n >= 50) return '#ca8a04'
+  return '#dc2626'
+}
+function scoreLabel(n: number) {
+  if (n >= 75) return 'Strong'
+  if (n >= 50) return 'Moderate'
+  return 'Weak'
+}
+
+function StatCard({ label, value, icon: Icon, sub }: {
+  label: string; value: string | number; icon: React.ElementType; sub?: string
+}) {
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-sm text-foreground/60">{label}</p>
+        <Icon className="h-4 w-4 text-foreground/30" />
+      </div>
+      <p className="text-3xl font-bold text-foreground">{value}</p>
+      {sub && <p className="text-xs text-foreground/50 mt-1">{sub}</p>}
+    </Card>
+  )
+}
 
 export default function Dashboard() {
-  const router = useRouter()
-  const [resumeFile, setResumeFile] = useState<File | null>(null)
-  const [jobDescription, setJobDescription] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [loadingStep, setLoadingStep] = useState('')
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const supabase     = createClient()
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const [profile, setProfile]               = useState<Profile | null>(null)
+  const [analyses, setAnalyses]             = useState<Analysis[]>([])
+  const [loading, setLoading]               = useState(true)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [upgraded, setUpgraded]             = useState(false)
 
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file.')
-      return
+  useEffect(() => {
+    if (searchParams.get('upgraded') === 'true') setUpgraded(true)
+  }, [searchParams])
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/signin'); return }
+
+      const [{ data: prof }, { data: hist }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('analyses')
+          .select('id, resume_name, score, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
+      ])
+      setProfile(prof)
+      setAnalyses(hist ?? [])
+      setLoading(false)
     }
+    load()
+  }, [supabase, router])
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be under 5MB.')
-      return
-    }
-
-    setError(null)
-    setResumeFile(file)
+  const handleUpgrade = async () => {
+    setBillingLoading(true)
+    const res  = await fetch('/api/stripe/checkout', { method: 'POST' })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    else setBillingLoading(false)
   }
 
-  const handleAnalyze = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    if (!resumeFile) {
-      setError('Please upload your resume PDF.')
-      return
-    }
-    if (!jobDescription.trim()) {
-      setError('Please paste the job description.')
-      return
-    }
-    if (jobDescription.trim().length < 50) {
-      setError('Job description seems too short. Please paste the full description.')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      // Step 1 — Build the form data payload
-      setLoadingStep('Reading your resume...')
-      const formData = new FormData()
-      formData.append('resume', resumeFile)
-      formData.append('jobDescription', jobDescription.trim())
-
-      // Step 2 — Call the API route
-      setLoadingStep('Analyzing with AI...')
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Server error: ${response.status}`)
-      }
-
-      // Step 3 — Parse and store results
-      setLoadingStep('Almost done...')
-      const data = await response.json()
-
-      // Store results in sessionStorage to pass to /results page
-      sessionStorage.setItem('analysisResult', JSON.stringify({
-        ...data,
-        resumeName: resumeFile.name,
-        analyzedAt: new Date().toISOString(),
-      }))
-
-      // Step 4 — Navigate to results
-      router.push('/results')
-
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
-      setError(message)
-      setIsLoading(false)
-      setLoadingStep('')
-    }
+  const handleManageBilling = async () => {
+    setBillingLoading(true)
+    const res  = await fetch('/api/stripe/portal', { method: 'POST' })
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+    else setBillingLoading(false)
   }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-foreground/40" />
+      </div>
+    )
+  }
+
+  const chartData = [...analyses].reverse().slice(-10).map(a => ({
+    name:  new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    score: a.score,
+  }))
+
+  const avgScore    = analyses.length ? Math.round(analyses.reduce((s, a) => s + a.score, 0) / analyses.length) : 0
+  const creditsLeft = profile?.plan === 'pro' ? '∞' : (profile?.credits ?? 0)
+  const isPro       = profile?.plan === 'pro'
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
+      <main className="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
 
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Analyze Your Resume
-          </h1>
-          <p className="text-foreground/70">
-            Upload your resume and paste a job description to get instant AI analysis
-          </p>
-        </div>
-
-        {/* Error Banner */}
-        {error && (
-          <div className="mb-6 flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
-            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-            <p className="text-sm font-medium">{error}</p>
+        {upgraded && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
+            <CheckCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-medium">You&apos;re now on Pro — unlimited analyses unlocked.</p>
           </div>
         )}
 
-        <form onSubmit={handleAnalyze} className="space-y-8">
-
-          {/* Resume Upload */}
-          <Card className="p-8 border-2 border-dashed border-border hover:border-primary/50 transition">
-            <label className="cursor-pointer block">
-              <div className="flex flex-col items-center justify-center py-12">
-                {resumeFile ? (
-                  <>
-                    <FileText className="h-12 w-12 text-primary mb-4" />
-                    <p className="text-lg font-semibold text-foreground mb-1">
-                      {resumeFile.name}
-                    </p>
-                    <p className="text-sm text-foreground/60 mb-4">
-                      {(resumeFile.size / 1024).toFixed(2)} KB · PDF
-                    </p>
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <label className="cursor-pointer">
-                        Change File
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-12 w-12 text-primary mb-4" />
-                    <p className="text-lg font-semibold text-foreground mb-2">
-                      Drag and drop your resume
-                    </p>
-                    <p className="text-sm text-foreground/60 mb-4">
-                      PDF only · max 5MB
-                    </p>
-                    <Button type="button" variant="outline" asChild>
-                      <label className="cursor-pointer">
-                        Upload PDF
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </Button>
-                  </>
-                )}
-              </div>
-            </label>
-          </Card>
-
-          {/* Job Description */}
+        {/* Header */}
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">
-              Job Description
-            </label>
-            <textarea
-              value={jobDescription}
-              onChange={(e) => {
-                setJobDescription(e.target.value)
-                setError(null)
-              }}
-              placeholder="Paste the full job description here — include responsibilities, requirements, and skills..."
-              className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent resize-none"
-              rows={10}
-              disabled={isLoading}
-            />
-            <p className="text-xs text-foreground/60 mt-2">
-              {jobDescription.length} characters
-              {jobDescription.length < 50 && jobDescription.length > 0 && (
-                <span className="text-destructive ml-2">· paste the full description for best results</span>
-              )}
-            </p>
+            <h1 className="text-2xl font-bold text-foreground mb-1">
+              {profile?.full_name ? `Hi, ${profile.full_name.split(' ')[0]}` : 'Dashboard'}
+            </h1>
+            <p className="text-foreground/50 text-sm">{profile?.email}</p>
           </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button asChild size="sm"><Link href="/dashboard/analyze">New Analysis</Link></Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>Sign out</Button>
+          </div>
+        </div>
 
-          {/* Tips */}
-          <Card className="p-4 bg-primary/5 border border-border">
-            <h4 className="font-semibold text-foreground mb-2">Tips for best results:</h4>
-            <ul className="space-y-1 text-sm text-foreground/70">
-              <li>• Use a text-based PDF (not a scanned image)</li>
-              <li>• Include the complete job description with all requirements</li>
-              <li>• Make sure your resume lists your real skills and experience</li>
-            </ul>
-          </Card>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total analyses" value={analyses.length} icon={FileText} />
+          <StatCard
+            label="Average score" value={analyses.length ? avgScore : '—'} icon={TrendingUp}
+            sub={analyses.length ? scoreLabel(avgScore) : undefined}
+          />
+          <StatCard
+            label="Credits left" value={creditsLeft} icon={Zap}
+            sub={isPro ? 'Unlimited · Pro' : 'Free · resets monthly'}
+          />
+          <StatCard
+            label="Plan" value={isPro ? 'Pro' : 'Free'} icon={CreditCard}
+            sub={isPro ? 'Unlimited analyses' : '3 analyses/month'}
+          />
+        </div>
 
-          {/* Loading Steps */}
-          {isLoading && loadingStep && (
-            <div className="flex items-center gap-3 text-sm text-foreground/70 px-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>{loadingStep}</span>
+        {/* Billing */}
+        <Card className={`p-6 mb-8 ${isPro ? 'border-primary/30 bg-primary/5' : ''}`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              {isPro ? (
+                <>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <p className="font-semibold text-foreground">HireBoost Pro</p>
+                  </div>
+                  <p className="text-sm text-foreground/60">Unlimited analyses · $9.99/month</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-foreground mb-1">Upgrade to Pro</p>
+                  <p className="text-sm text-foreground/60">Unlimited analyses, no monthly reset — $9.99/month</p>
+                </>
+              )}
+            </div>
+            <Button
+              variant={isPro ? 'outline' : 'default'}
+              onClick={isPro ? handleManageBilling : handleUpgrade}
+              disabled={billingLoading}
+              className="shrink-0"
+            >
+              {billingLoading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : isPro ? 'Manage billing' : 'Upgrade — $9.99/mo'}
+            </Button>
+          </div>
+          {!isPro && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {['Unlimited analyses', 'Full keyword reports', 'Rewritten bullet points'].map(f => (
+                <div key={f} className="flex items-center gap-2 text-sm text-foreground/70">
+                  <CheckCircle className="h-4 w-4 text-primary shrink-0" />{f}
+                </div>
+              ))}
             </div>
           )}
+        </Card>
 
-          {/* Submit */}
-          <Button
-            type="submit"
-            disabled={isLoading || !resumeFile || !jobDescription.trim()}
-            size="lg"
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {loadingStep || 'Analyzing...'}
-              </>
-            ) : (
-              'Analyze Resume'
-            )}
-          </Button>
+        {/* Chart */}
+        {chartData.length > 1 && (
+          <Card className="p-6 mb-8">
+            <h2 className="text-base font-semibold text-foreground mb-4">Score history</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={chartData} barSize={28}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' } as React.SVGProps<SVGTextElement>} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#888' } as React.SVGProps<SVGTextElement>} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                />
+                <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={scoreColor(entry.score)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        )}
 
-          <p className="text-center text-sm text-foreground/60">
-            or{' '}
-            <Link href="/" className="text-primary hover:underline">
-              go back home
-            </Link>
-          </p>
-        </form>
+        {/* History */}
+        <div>
+          <h2 className="text-base font-semibold text-foreground mb-4">Analysis history</h2>
+          {analyses.length === 0 ? (
+            <Card className="p-12 text-center">
+              <FileText className="h-10 w-10 text-foreground/20 mx-auto mb-3" />
+              <p className="text-foreground/50 mb-4">No analyses yet. Upload your first resume to get started.</p>
+              <Button asChild><Link href="/dashboard/analyze">Analyze a resume</Link></Button>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {analyses.map(a => (
+                <Card key={a.id} className="p-4 flex items-center gap-4 hover:border-primary/30 transition-colors">
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white"
+                    style={{ background: scoreColor(a.score) }}
+                  >
+                    {a.score}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{a.resume_name}</p>
+                    <p className="text-xs text-foreground/50 flex items-center gap-1 mt-0.5">
+                      <Clock className="h-3 w-3" />
+                      {new Date(a.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' })}
+                      <span className="mx-1">·</span>
+                      <span style={{ color: scoreColor(a.score) }}>{scoreLabel(a.score)}</span>
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground/30 shrink-0" />
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
       </main>
-
       <Footer />
     </div>
   )

@@ -26,7 +26,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild className="text-base">
-                <Link href="/dashboard">
+                <Link href="/analyse">
                   Analyze My Resume <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

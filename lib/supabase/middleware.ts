@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   // Define which routes are protected
   const isProtected =
     // pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/results') ||
+    // pathname.startsWith('/results') ||
     pathname.startsWith('/account') ||
     pathname.startsWith('/billing')
 
