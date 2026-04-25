@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
 import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react'
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const router = useRouter()
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [jobDescription, setJobDescription] = useState('')
@@ -96,10 +94,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+    <div className="w-full">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
             Analyze Your Resume
@@ -237,8 +233,6 @@ export default function Dashboard() {
           </p>
         </form>
       </main>
-
-      <Footer />
     </div>
   )
 }
