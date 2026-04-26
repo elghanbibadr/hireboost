@@ -2,16 +2,13 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Footer } from '@/components/footer'
-import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, ArrowRight, FileSearch } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignUp() {
   const supabase = createClient()
+  const router = useRouter()
 
   const [formData, setFormData] = useState({
     name: '',
@@ -19,9 +16,12 @@ export default function SignUp() {
     password: '',
     confirmPassword: '',
   })
+
+  const [showPw, setShowPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,14 +43,14 @@ export default function SignUp() {
       return
     }
     if (!agreeToTerms) {
-      setError('Please agree to the Terms of Service.')
+      setError('Please agree to the Terms.')
       return
     }
 
     setIsLoading(true)
 
     const { error } = await supabase.auth.signUp({
-      email: formData.email,          // ← was hardcoded before, now fixed
+      email: formData.email,
       password: formData.password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
@@ -68,139 +68,175 @@ export default function SignUp() {
     setIsLoading(false)
   }
 
-  // ── Success state — tell user to check email ──────────────────────────────
+  // ✅ Success UI (styled like your app)
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="border-b border-border bg-background sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="h-16 flex items-center">
-              <Link href="/" className="font-bold text-xl text-primary">HireBoost</Link>
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#080808' }}>
+        <div style={{
+          background: '#111',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          padding: 32,
+          maxWidth: 420,
+          width: '100%',
+          textAlign: 'center'
+        }}>
+          <CheckCircle className="h-10 w-10 mx-auto mb-4" style={{ color: '#C8FF5E' }} />
+          <h2 className="text-white text-xl font-bold mb-2">Check your email</h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
+            We sent a confirmation link to {formData.email}
+          </p>
+
+          <button
+            onClick={() => router.push('/signin')}
+            className="mt-6 w-full"
+            style={{
+              background: '#C8FF5E',
+              color: '#000',
+              padding: '12px',
+              borderRadius: 12,
+              fontWeight: 600
+            }}
+          >
+            Go to Sign in
+          </button>
         </div>
-        <main className="flex-grow flex items-center justify-center px-4 py-12">
-          <Card className="w-full max-w-md p-8 text-center border border-border">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">Check your email</h1>
-            <p className="text-foreground/60 mb-6">
-              We sent a confirmation link to <strong>{formData.email}</strong>.
-              Click it to activate your account then sign in.
-            </p>
-            <Button asChild className="w-full" size="lg">
-              <Link href="/signin">Go to Sign In</Link>
-            </Button>
-          </Card>
-        </main>
-        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="border-b border-border bg-background sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 flex items-center">
-            <Link href="/" className="font-bold text-xl text-primary">HireBoost</Link>
+    <div className="min-h-screen flex flex-col" style={{ background: '#080808' }}>
+
+      {/* Nav */}
+      <nav className="px-6 py-5">
+        <Link href="/" className="inline-flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#C8FF5E' }}>
+            <FileSearch className="h-4 w-4 text-black" />
+          </div>
+          <span className="font-bold text-white text-[15px]">HireBoost</span>
+        </Link>
+      </nav>
+
+      {/* Main */}
+      <main className="flex-grow flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Create account
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
+              Start using HireBoost today
+            </p>
+          </div>
+
+          {/* Card */}
+          <div style={{
+            background: '#111',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 20,
+            padding: 32,
+          }}>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-xl mb-5"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                <AlertCircle className="h-4 w-4 mt-0.5" />
+                <p style={{ fontSize: 13 }}>{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Name */}
+              <div>
+                <label className="label">Full Name</label>
+                <div className="relative">
+                  <User className="icon" />
+                  <input name="name" value={formData.name} onChange={handleChange}
+                    placeholder="John Doe" required disabled={isLoading}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="label">Email</label>
+                <div className="relative">
+                  <Mail className="icon" />
+                  <input name="email" type="email"
+                    value={formData.email} onChange={handleChange}
+                    placeholder="you@example.com"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="label">Password</label>
+                <div className="relative">
+                  <Lock className="icon" />
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="input pr-10"
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)} className="eye">
+                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm */}
+              <div>
+                <label className="label">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="icon" />
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="input pr-10"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw(v => !v)} className="eye">
+                    {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Terms */}
+              <label className="flex items-center gap-2 text-sm text-white/50">
+                <input type="checkbox" checked={agreeToTerms}
+                  onChange={e => setAgreeToTerms(e.target.checked)} />
+                I agree to Terms
+              </label>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn"
+              >
+                {isLoading ? 'Creating...' : <>Create Account <ArrowRight size={16} /></>}
+              </button>
+
+            </form>
+
+            <p className="text-center mt-6 text-sm text-white/40">
+              Already have an account? <Link href="/signin" style={{ color: '#C8FF5E' }}>Sign in</Link>
+            </p>
+
           </div>
         </div>
-      </div>
-
-      <main className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="w-full max-w-md p-8 border border-border">
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Create your account</h1>
-            <p className="text-foreground/60">3 free analyses every month — no credit card needed</p>
-          </div>
-
-          {error && (
-            <div className="mb-5 flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-foreground/40" />
-                <Input id="name" name="name" type="text" placeholder="John Doe"
-                  value={formData.name} onChange={handleChange} className="pl-10" required disabled={isLoading} />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-foreground/40" />
-                <Input id="email" name="email" type="email" placeholder="you@example.com"
-                  value={formData.email} onChange={handleChange} className="pl-10" required disabled={isLoading} />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-foreground/40" />
-                <Input id="password" name="password" type="password" placeholder="At least 8 characters"
-                  value={formData.password} onChange={handleChange} className="pl-10" required disabled={isLoading} />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-foreground mb-2">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-foreground/40" />
-                <Input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password"
-                  value={formData.confirmPassword} onChange={handleChange} className="pl-10" required disabled={isLoading} />
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 py-2">
-              <Checkbox id="terms" checked={agreeToTerms}
-                onCheckedChange={checked => setAgreeToTerms(checked as boolean)} className="mt-1" />
-              <label htmlFor="terms" className="text-sm text-foreground/70 cursor-pointer">
-                I agree to the{' '}
-                <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                {' '}and{' '}
-                <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
-              </label>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword}
-              className="w-full" size="lg"
-            >
-              {isLoading ? 'Creating account...' : 'Create Account'}
-            </Button>
-          </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-background text-foreground/60">or</span>
-            </div>
-          </div>
-
-          <Button variant="outline" className="w-full mb-6" size="lg" onClick={async () => {
-            await supabase.auth.signInWithOAuth({
-              provider: 'google',
-              options: { redirectTo: `${location.origin}/auth/callback` },
-            })
-          }}>
-            Sign up with Google
-          </Button>
-
-          <p className="text-center text-sm text-foreground/60">
-            Already have an account?{' '}
-            <Link href="/signin" className="text-primary font-semibold hover:underline">Sign in</Link>
-          </p>
-        </Card>
       </main>
-      <Footer />
     </div>
   )
 }
