@@ -33,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Main content area */}
       <div className="flex-grow flex flex-col min-w-0">
-        <main className="flex-grow px-4 sm:px-8 py-8 max-w-5xl w-full mx-auto">
+        <main className="flex-grow px-4 sm:px-8 py-8 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>

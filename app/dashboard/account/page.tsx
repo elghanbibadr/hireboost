@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   User, Lock, Trash2, CheckCircle,
-  AlertCircle, Loader2, Eye, EyeOff,
+  AlertCircle, Loader2, Eye, EyeOff, ShieldAlert
 } from 'lucide-react'
 
 interface Profile {
@@ -22,13 +22,13 @@ function SectionHeader({ icon: Icon, title, description }: {
   icon: React.ElementType; title: string; description: string
 }) {
   return (
-    <div className="flex items-start gap-3 mb-5">
-      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="h-4 w-4 text-foreground/50" />
+    <div className="flex items-start gap-4 mb-8">
+      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5 shadow-inner">
+        <Icon className="h-5 w-5 text-white/40" />
       </div>
       <div>
-        <p className="font-semibold text-foreground text-sm">{title}</p>
-        <p className="text-xs text-foreground/50 mt-0.5">{description}</p>
+        <p className="font-bold text-white text-base tracking-tight">{title}</p>
+        <p className="text-sm text-white/30 mt-0.5">{description}</p>
       </div>
     </div>
   )
@@ -36,15 +36,15 @@ function SectionHeader({ icon: Icon, title, description }: {
 
 function Toast({ message, type }: { message: string; type: 'success' | 'error' }) {
   return (
-    <div className={`flex items-start gap-2.5 p-3.5 rounded-lg border text-sm mb-5 ${
+    <div className={`flex items-center gap-3 p-4 rounded-2xl border text-sm mb-6 animate-in fade-in slide-in-from-top-2 ${
       type === 'success'
-        ? 'bg-green-50 border-green-200 text-green-800'
-        : 'bg-destructive/10 border-destructive/20 text-destructive'
+        ? 'bg-[#C8FF5E]/10 border-[#C8FF5E]/20 text-[#C8FF5E]'
+        : 'bg-red-500/10 border-red-500/20 text-red-400'
     }`}>
       {type === 'success'
-        ? <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
-        : <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />}
-      {message}
+        ? <CheckCircle className="h-4 w-4 shrink-0" />
+        : <AlertCircle className="h-4 w-4 shrink-0" />}
+      <span className="font-medium">{message}</span>
     </div>
   )
 }
@@ -90,7 +90,6 @@ export default function AccountPage() {
     load()
   }, [supabase])
 
-  // ── Update name ───────────────────────────────────────────────────────────
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault()
     setNameMsg(null)
@@ -112,7 +111,6 @@ export default function AccountPage() {
     setNameLoading(false)
   }
 
-  // ── Change password ───────────────────────────────────────────────────────
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setPwMsg(null)
@@ -122,7 +120,6 @@ export default function AccountPage() {
 
     setPwLoading(true)
 
-    // Re-authenticate with current password first
     const { data: { user } } = await supabase.auth.getUser()
     if (!user?.email) return
 
@@ -150,7 +147,6 @@ export default function AccountPage() {
     setPwLoading(false)
   }
 
-  // ── Delete account ────────────────────────────────────────────────────────
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'DELETE') {
       setDeleteMsg({ text: 'Type DELETE exactly to confirm.', type: 'error' })
@@ -159,7 +155,6 @@ export default function AccountPage() {
     setDeleteLoading(true)
     setDeleteMsg(null)
 
-    // Call a server action / API route that uses service role to delete
     const res  = await fetch('/api/account/delete', { method: 'POST' })
     const data = await res.json()
 
@@ -176,170 +171,189 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
+        <Loader2 className="h-5 w-5 animate-spin text-[#C8FF5E]" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-10 max-w-3xl pb-20 fade-up">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+        .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
 
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Account</h1>
-        <p className="text-sm text-foreground/50 mt-0.5">Manage your profile and account settings.</p>
+      {/* Page Header */}
+      <div className="border-b border-white/5 pb-6">
+        <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
+          Account Settings
+        </h1>
+        <p className="text-white/40 mt-1 text-sm">
+          Manage your personal details and security.
+        </p>
       </div>
 
-      {/* Account meta */}
-      <Card className="p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-          <span className="text-base font-bold text-primary">
+      {/* Account Meta Card */}
+      <div className="p-6 rounded-[32px] bg-white/[0.02] border border-white/10 flex items-center gap-6">
+        <div className="w-16 h-16 rounded-full bg-[#C8FF5E]/10 border border-[#C8FF5E]/20 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(200,255,94,0.1)]">
+          <span className="text-xl font-black text-[#C8FF5E]">
             {profile?.full_name?.charAt(0)?.toUpperCase() ?? profile?.email?.charAt(0)?.toUpperCase() ?? 'U'}
           </span>
         </div>
         <div className="flex-grow min-w-0">
-          <p className="font-medium text-foreground text-sm">{profile?.full_name || 'No name set'}</p>
-          <p className="text-xs text-foreground/50 truncate">{profile?.email}</p>
+          <p className="font-bold text-white text-lg leading-none mb-1">{profile?.full_name || 'No name set'}</p>
+          <p className="text-sm text-white/30 truncate font-medium tracking-tight">{profile?.email}</p>
         </div>
-        <div className="shrink-0 text-right">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+        <div className="shrink-0 text-right hidden sm:block">
+          <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
             profile?.plan === 'pro'
-              ? 'bg-primary/15 text-primary'
-              : 'bg-muted text-foreground/50'
+              ? 'bg-[#C8FF5E]/10 border-[#C8FF5E]/30 text-[#C8FF5E]'
+              : 'bg-white/5 border-white/10 text-white/40'
           }`}>
-            {profile?.plan === 'pro' ? 'Pro' : 'Free'}
+            {profile?.plan === 'pro' ? 'Pro Member' : 'Free Tier'}
           </span>
           {profile?.created_at && (
-            <p className="text-xs text-foreground/30 mt-1">
-              Joined {new Date(profile.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' })}
+            <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter mt-2">
+              Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
             </p>
           )}
         </div>
-      </Card>
+      </div>
 
-      {/* ── Profile section ───────────────────────────────────────────────── */}
-      <Card className="p-6">
+      {/* Profile Section */}
+      <div className="p-8 rounded-[32px] bg-white/[0.01] border border-white/5">
         <SectionHeader
           icon={User}
-          title="Profile information"
-          description="Update your display name."
+          title="Profile Information"
+          description="Update your identity on the platform."
         />
 
         {nameMsg && <Toast message={nameMsg.text} type={nameMsg.type} />}
 
-        <form onSubmit={handleSaveName} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">Full Name</label>
-            <Input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your full name"
-              disabled={nameLoading}
-            />
+        <form onSubmit={handleSaveName} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Display Name</label>
+              <Input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Full Name"
+                disabled={nameLoading}
+                className="h-12 bg-white/[0.02] border-white/10 rounded-xl focus:border-[#C8FF5E]/50 focus:ring-0 transition-all text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Account Email</label>
+              <Input value={profile?.email ?? ''} disabled className="h-12 bg-white/5 border-white/5 rounded-xl opacity-40 cursor-not-allowed text-white/50" />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">Email Address</label>
-            <Input value={profile?.email ?? ''} disabled className="opacity-60 cursor-not-allowed" />
-            <p className="text-xs text-foreground/40 mt-1.5">Email cannot be changed.</p>
-          </div>
-          <Button type="submit" disabled={nameLoading} size="sm">
-            {nameLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save changes'}
+          <Button type="submit" disabled={nameLoading} className="h-12 px-8 rounded-xl bg-white text-black font-bold hover:bg-[#C8FF5E] transition-all">
+            {nameLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Profile'}
           </Button>
         </form>
-      </Card>
+      </div>
 
-      {/* ── Password section ──────────────────────────────────────────────── */}
-      <Card className="p-6">
+      {/* Password Section */}
+      <div className="p-8 rounded-[32px] bg-white/[0.01] border border-white/5">
         <SectionHeader
           icon={Lock}
-          title="Change password"
-          description="Use a strong password with at least 8 characters."
+          title="Security"
+          description="Keep your account protected with a strong password."
         />
 
         {pwMsg && <Toast message={pwMsg.text} type={pwMsg.type} />}
 
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">Current Password</label>
-            <div className="relative">
-              <Input
-                type={showPw ? 'text' : 'password'}
-                value={currentPw}
-                onChange={e => setCurrentPw(e.target.value)}
-                placeholder="••••••••"
-                disabled={pwLoading}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-foreground/60"
-              >
-                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+        <form onSubmit={handleChangePassword} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Current Password</label>
+              <div className="relative">
+                <Input
+                  type={showPw ? 'text' : 'password'}
+                  value={currentPw}
+                  onChange={e => setCurrentPw(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={pwLoading}
+                  className="h-12 bg-white/[0.02] border-white/10 rounded-xl pr-12 focus:border-[#C8FF5E]/50 text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                >
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">New Password</label>
+                <Input
+                  type={showPw ? 'text' : 'password'}
+                  value={newPw}
+                  onChange={e => setNewPw(e.target.value)}
+                  placeholder="Min 8 characters"
+                  disabled={pwLoading}
+                  className="h-12 bg-white/[0.02] border-white/10 rounded-xl focus:border-[#C8FF5E]/50 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.15em] ml-1">Confirm New</label>
+                <Input
+                  type={showPw ? 'text' : 'password'}
+                  value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)}
+                  placeholder="Repeat password"
+                  disabled={pwLoading}
+                  className="h-12 bg-white/[0.02] border-white/10 rounded-xl focus:border-[#C8FF5E]/50 text-white"
+                />
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">New Password</label>
-            <Input
-              type={showPw ? 'text' : 'password'}
-              value={newPw}
-              onChange={e => setNewPw(e.target.value)}
-              placeholder="At least 8 characters"
-              disabled={pwLoading}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">Confirm New Password</label>
-            <Input
-              type={showPw ? 'text' : 'password'}
-              value={confirmPw}
-              onChange={e => setConfirmPw(e.target.value)}
-              placeholder="Repeat new password"
-              disabled={pwLoading}
-            />
-          </div>
-          <Button type="submit" disabled={pwLoading || !currentPw || !newPw || !confirmPw} size="sm">
-            {pwLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Change password'}
+          <Button type="submit" disabled={pwLoading || !currentPw || !newPw || !confirmPw} className="h-12 px-8 rounded-xl bg-white text-black font-bold hover:bg-[#C8FF5E] transition-all">
+            {pwLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reset Password'}
           </Button>
         </form>
-      </Card>
+      </div>
 
-      {/* ── Danger zone ───────────────────────────────────────────────────── */}
-      <Card className="p-6 border-destructive/20">
-        <SectionHeader
-          icon={Trash2}
-          title="Delete account"
-          description="Permanently delete your account and all your data. This cannot be undone."
-        />
+      {/* Danger Zone */}
+      <div className="p-8 rounded-[32px] bg-red-500/[0.02] border border-red-500/10">
+        <div className="flex items-start gap-4 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Trash2 className="h-5 w-5 text-red-500" />
+          </div>
+          <div>
+            <p className="font-bold text-white text-base tracking-tight">Danger Zone</p>
+            <p className="text-sm text-white/30 mt-0.5">Permanently remove your account and all stored data.</p>
+          </div>
+        </div>
 
         {deleteMsg && <Toast message={deleteMsg.text} type={deleteMsg.type} />}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-2">
-              Type <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-destructive">DELETE</span> to confirm
-            </label>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-white/40">
+              Please type <span className="text-red-400 font-black">DELETE</span> below to confirm.
+            </p>
             <Input
               value={deleteConfirm}
               onChange={e => setDeleteConfirm(e.target.value)}
-              placeholder="DELETE"
+              placeholder="Type DELETE"
               disabled={deleteLoading}
-              className="font-mono border-destructive/30 focus:ring-destructive/30 max-w-xs"
+              className="h-12 bg-red-500/[0.05] border-red-500/20 rounded-xl focus:border-red-500/50 text-white font-mono max-w-sm"
             />
           </div>
           <Button
             variant="destructive"
-            size="sm"
             onClick={handleDeleteAccount}
             disabled={deleteLoading || deleteConfirm !== 'DELETE'}
+            className="h-12 px-8 rounded-xl font-bold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/5"
           >
-            {deleteLoading
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <><Trash2 className="h-3.5 w-3.5 mr-1.5" />Delete my account</>}
+            {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete Permanently'}
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

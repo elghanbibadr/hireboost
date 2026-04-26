@@ -8,7 +8,10 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Lock, CheckCircle, XCircle, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react'
+import { 
+  Lock, CheckCircle, XCircle, TrendingUp, 
+  AlertTriangle, ArrowRight, Zap, Sparkles 
+} from 'lucide-react'
 
 interface AnalysisResult {
   score: number
@@ -21,21 +24,16 @@ interface AnalysisResult {
   analyzedAt: string
 }
 
-function scoreColor(score: number) {
-  if (score >= 75) return 'text-green-600'
-  if (score >= 50) return 'text-yellow-500'
-  return 'text-red-500'
-}
-function scoreLabel(score: number) {
-  if (score >= 75) return 'Strong match'
-  if (score >= 50) return 'Moderate match'
-  return 'Weak match'
+const scoreStyles = (score: number) => {
+  if (score >= 75) return { color: 'text-[#C8FF5E]', shadow: 'shadow-[#C8FF5E]/20', label: 'Strong Match' }
+  if (score >= 50) return { color: 'text-yellow-400', shadow: 'shadow-yellow-400/20', label: 'Moderate Match' }
+  return { color: 'text-red-500', shadow: 'shadow-red-500/20', label: 'Weak Match' }
 }
 
 const priorityStyles: Record<string, string> = {
-  high:   'bg-red-50 text-red-700 border-red-200',
-  medium: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  low:    'bg-green-50 text-green-700 border-green-200',
+  high:   'bg-red-500/10 text-red-400 border-red-500/20',
+  medium: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  low:    'bg-[#C8FF5E]/10 text-[#C8FF5E] border-[#C8FF5E]/20',
 }
 
 export default function Results() {
@@ -61,133 +59,168 @@ export default function Results() {
 
   if (!result || !authChecked) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-foreground/40">Loading results...</div>
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Zap className="h-8 w-8 text-[#C8FF5E] animate-pulse" />
+          <p className="text-white/40 text-sm font-medium tracking-widest uppercase">Calculating Scores...</p>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+  const styles = scoreStyles(result.score)
 
-        <div className="mb-8">
-          <p className="text-sm text-foreground/50 mb-1">{result.resumeName}</p>
-          <h1 className="text-3xl font-bold text-foreground mb-1">Resume Analysis</h1>
-          <p className="text-foreground/50 text-sm">
-            {new Date(result.analyzedAt).toLocaleDateString('en-US', { dateStyle: 'long' })}
+  return (
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col selection:bg-[#C8FF5E] selection:text-black">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+        .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); }
+      `}</style>
+      
+      {/* <Navbar /> */}
+      
+      <main className="flex-grow max-w-4xl mx-auto w-full px-6 py-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Header */}
+        <div className="mb-12 text-center sm:text-left">
+          <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/40">
+               Analysis Report
+             </span>
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight mb-2" style={{ fontFamily: "'Instrument Serif', serif" }}>
+            {result.resumeName}
+          </h1>
+          <p className="text-white/30 text-sm font-medium italic">
+            Generated on {new Date(result.analyzedAt).toLocaleDateString('en-US', { dateStyle: 'long' })}
           </p>
         </div>
 
-        {/* Score card — always visible */}
-        <Card className="p-8 mb-6 text-center">
-          <p className={`text-7xl font-bold mb-2 ${scoreColor(result.score)}`}>{result.score}</p>
-          <p className="text-lg font-semibold text-foreground mb-2">{scoreLabel(result.score)}</p>
-          <p className="text-foreground/60 text-sm max-w-lg mx-auto">{result.scoreExplanation}</p>
+        {/* Hero Score Card */}
+        <Card className="p-12 mb-10 glass-card rounded-[40px] relative overflow-hidden text-center border-white/10">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#C8FF5E]/5 blur-[100px] -z-10" />
+          
+          <div className={`text-8xl font-black mb-4 tracking-tighter ${styles.color} drop-shadow-[0_0_15px_rgba(200,255,94,0.2)]`}>
+            {result.score}
+          </div>
+          <h2 className="text-xl font-bold mb-4 uppercase tracking-[0.1em]">{styles.label}</h2>
+          <p className="text-white/50 text-sm max-w-lg mx-auto leading-relaxed font-medium">
+            {result.scoreExplanation}
+          </p>
         </Card>
 
-        {/* ── NOT SIGNED IN: blur gate ─────────────────────────────────────── */}
+        {/* ── GATE: If Not Logged In ─────────────────────────────────────── */}
         {!isAuthed && (
-          <div className="relative rounded-xl overflow-hidden mb-6">
-            {/* blurred dummy content */}
-            <div className="blur-md pointer-events-none select-none p-6 grid grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="p-4 space-y-2">
-                  <div className="h-4 bg-foreground/10 rounded w-2/3" />
-                  <div className="h-3 bg-foreground/10 rounded w-full" />
-                  <div className="h-3 bg-foreground/10 rounded w-4/5" />
-                  <div className="h-3 bg-foreground/10 rounded w-1/2" />
-                </Card>
-              ))}
+          <div className="relative rounded-[40px] overflow-hidden border border-white/10 bg-white/[0.01]">
+            <div className="blur-xl grayscale opacity-20 pointer-events-none select-none p-8 space-y-8">
+              <div className="h-32 bg-white/10 rounded-3xl w-full" />
+              <div className="h-64 bg-white/10 rounded-3xl w-full" />
             </div>
 
-            {/* overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/75 backdrop-blur-sm">
-              <Lock className="h-10 w-10 text-primary mx-auto mb-3" />
-              <h2 className="text-xl font-bold text-foreground mb-2 text-center">Unlock the full report</h2>
-              <p className="text-foreground/60 text-sm mb-6 text-center max-w-xs">
-                Keywords, missing skills, rewritten bullets and prioritised suggestions — free account, no card required.
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#050505]/60 backdrop-blur-md p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#C8FF5E] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(200,255,94,0.3)]">
+                <Lock className="h-8 w-8 text-black" />
+              </div>
+              <h2 className="text-3xl font-bold mb-3" style={{ fontFamily: "'Instrument Serif', serif" }}>Full Insights Locked</h2>
+              <p className="text-white/50 text-sm mb-8 max-w-xs font-medium">
+                Unlock keyword matching, AI bullet point rewriting, and priority suggestions with a free account.
               </p>
-              <div className="flex flex-col gap-3 w-full max-w-xs">
-                <Button asChild size="lg"><Link href="/signup">Create free account <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-                <Button asChild variant="outline" size="lg"><Link href="/signin">Sign in</Link></Button>
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                <Button asChild size="lg" className="flex-1 bg-[#C8FF5E] text-black font-bold rounded-xl hover:scale-105 transition-all">
+                  <Link href="/signup">Create Free Account</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="flex-1 border-white/10 bg-white/5 rounded-xl font-bold">
+                  <Link href="/signin">Sign In</Link>
+                </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── SIGNED IN: full report ───────────────────────────────────────── */}
+        {/* ── CONTENT: Full Report ───────────────────────────────────────── */}
         {isAuthed && (
-          <div className="space-y-6">
-
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Keyword Analysis</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm font-semibold text-green-600 mb-2 flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" /> Matched ({result.keywords.matched.length})
+          <div className="space-y-8">
+            
+            {/* Keywords */}
+            <Card className="p-8 glass-card rounded-[32px]">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 mb-8 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-[#C8FF5E]" /> Keyword Analysis
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <p className="text-xs font-bold text-[#C8FF5E] uppercase tracking-widest flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" /> Found ({result.keywords.matched.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {result.keywords.matched.map(kw => (
-                      <span key={kw} className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">{kw}</span>
+                      <span key={kw} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-[#C8FF5E]/5 text-[#C8FF5E] border border-[#C8FF5E]/10 italic">
+                        {kw}
+                      </span>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-red-500 mb-2 flex items-center gap-1">
+                <div className="space-y-4">
+                  <p className="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center gap-2">
                     <XCircle className="h-4 w-4" /> Missing ({result.keywords.missing.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {result.keywords.missing.map(kw => (
-                      <span key={kw} className="text-xs px-2 py-1 rounded-full bg-red-50 text-red-700 border border-red-200">{kw}</span>
+                      <span key={kw} className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-red-500/5 text-red-400 border border-red-500/10 italic">
+                        {kw}
+                      </span>
                     ))}
                   </div>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" /> Strengths
-              </h2>
-              <ul className="space-y-2">
-                {result.strengths.map((s, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />{s}
-                  </li>
-                ))}
-              </ul>
-            </Card>
+            {/* Strengths & Suggestions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="p-8 glass-card rounded-[32px]">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 mb-6 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-[#C8FF5E]" /> Key Strengths
+                </h3>
+                <ul className="space-y-4">
+                  {result.strengths.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm font-medium text-white/70 leading-relaxed">
+                      <CheckCircle className="h-4 w-4 text-[#C8FF5E] shrink-0 mt-0.5" /> {s}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
 
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" /> Suggestions
-              </h2>
-              <div className="space-y-3">
-                {result.suggestions.map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 mt-0.5 ${priorityStyles[s.priority]}`}>
-                      {s.priority}
-                    </span>
-                    <p className="text-sm text-foreground/80">{s.content}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Rewritten Bullet Points</h2>
-              <div className="space-y-5">
-                {result.improvedBullets.map((b, i) => (
-                  <div key={i}>
-                    <div className="p-3 rounded-lg bg-red-50 border border-red-100 mb-2">
-                      <p className="text-xs font-semibold text-red-500 mb-1">Before</p>
-                      <p className="text-sm text-foreground/70">{b.original}</p>
+              <Card className="p-8 glass-card rounded-[32px]">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 mb-6 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-400" /> Improvement Area
+                </h3>
+                <div className="space-y-3">
+                  {result.suggestions.map((s, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${priorityStyles[s.priority]}`}>
+                        {s.priority} Priority
+                      </span>
+                      <p className="text-sm text-white/60 font-medium leading-relaxed">{s.content}</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-green-50 border border-green-100">
-                      <p className="text-xs font-semibold text-green-600 mb-1">After</p>
-                      <p className="text-sm text-foreground/80">{b.improved}</p>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* Improved Bullets */}
+            <Card className="p-8 glass-card rounded-[32px]">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 mb-8 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#C8FF5E]" /> AI Optimized Content
+              </h3>
+              <div className="space-y-8">
+                {result.improvedBullets.map((b, i) => (
+                  <div key={i} className="relative space-y-4">
+                    <div className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 italic">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-2">Original</p>
+                      <p className="text-sm text-white/40">{b.original}</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-[#C8FF5E]/5 border border-[#C8FF5E]/20 shadow-[0_0_20px_rgba(200,255,94,0.03)]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#C8FF5E] mb-2">HireBoost Improved</p>
+                      <p className="text-sm text-white/90 font-medium leading-relaxed">{b.improved}</p>
                     </div>
                   </div>
                 ))}
@@ -197,13 +230,11 @@ export default function Results() {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          <Button asChild variant="outline" className="flex-1"><Link href="/dashboard">Analyze another</Link></Button>
-          {isAuthed && <Button asChild className="flex-1"><Link href="/dashboard">Dashboard</Link></Button>}
-        </div>
+        {/* Footer Actions */}
+    
 
       </main>
-      <Footer />
+      
     </div>
   )
 }
