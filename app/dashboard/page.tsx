@@ -1,33 +1,29 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import {
-  FileText, Zap, CreditCard, TrendingUp, Clock, ChevronRight,
-  CheckCircle, Sparkles, Loader2,
+  FileText, Zap, TrendingUp, Clock, ChevronRight,
+  Loader2, Plus, Sparkles,
 } from 'lucide-react'
 
-interface Profile {
-  plan: 'free' | 'pro'
-  credits: number
-  email: string
-  full_name: string
-  stripe_customer_id: string | null
-}
 interface Analysis {
   id: string
   resume_name: string
   score: number
   created_at: string
+}
+interface Profile {
+  plan: 'free' | 'pro'
+  credits: number
+  full_name: string
+  email: string
 }
 
 function scoreColor(n: number) {
@@ -41,41 +37,38 @@ function scoreLabel(n: number) {
   return 'Weak'
 }
 
-function StatCard({ label, value, icon: Icon, sub }: {
-  label: string; value: string | number; icon: React.ElementType; sub?: string
+function StatCard({
+  label, value, sub, icon: Icon, accent,
+}: {
+  label: string; value: string | number; sub?: string
+  icon: React.ElementType; accent?: string
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between mb-3">
-        <p className="text-sm text-foreground/60">{label}</p>
-        <Icon className="h-4 w-4 text-foreground/30" />
+    <Card className="p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-foreground/50 uppercase tracking-wide">{label}</p>
+        <div className={`w-7 h-7 rounded-md flex items-center justify-center ${accent ?? 'bg-muted'}`}>
+          <Icon className="h-3.5 w-3.5 text-foreground/50" />
+        </div>
       </div>
-      <p className="text-3xl font-bold text-foreground">{value}</p>
-      {sub && <p className="text-xs text-foreground/50 mt-1">{sub}</p>}
+      <div>
+        <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
+        {sub && <p className="text-xs text-foreground/40 mt-1">{sub}</p>}
+      </div>
     </Card>
   )
 }
 
-export default function Dashboard() {
-  const router       = useRouter()
-  const searchParams = useSearchParams()
-  const supabase     = createClient()
-
-  const [profile, setProfile]               = useState<Profile | null>(null)
-  const [analyses, setAnalyses]             = useState<Analysis[]>([])
-  const [loading, setLoading]               = useState(true)
-  const [billingLoading, setBillingLoading] = useState(false)
-  const [upgraded, setUpgraded]             = useState(false)
-
-  useEffect(() => {
-    if (searchParams.get('upgraded') === 'true') setUpgraded(true)
-  }, [searchParams])
+export default function DashboardPage() {
+  const supabase = createClient()
+  const [profile, setProfile]   = useState<Profile | null>(null)
+  const [analyses, setAnalyses] = useState<Analysis[]>([])
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/signin'); return }
-
+      if (!user) return
       const [{ data: prof }, { data: hist }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
         supabase.from('analyses')
@@ -89,189 +82,161 @@ export default function Dashboard() {
       setLoading(false)
     }
     load()
-  }, [supabase, router])
-
-  const handleUpgrade = async () => {
-    setBillingLoading(true)
-    const res  = await fetch('/api/stripe/checkout', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    else setBillingLoading(false)
-  }
-
-  const handleManageBilling = async () => {
-    setBillingLoading(true)
-    const res  = await fetch('/api/stripe/portal', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    else setBillingLoading(false)
-  }
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
+  }, [supabase])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-foreground/40" />
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
       </div>
     )
   }
 
-  const chartData = [...analyses].reverse().slice(-10).map(a => ({
+  const isPro      = profile?.plan === 'pro'
+  const avgScore   = analyses.length
+    ? Math.round(analyses.reduce((s, a) => s + a.score, 0) / analyses.length)
+    : 0
+  const best       = analyses.length ? Math.max(...analyses.map(a => a.score)) : 0
+  const creditsLeft = isPro ? '∞' : (profile?.credits ?? 0)
+
+  const chartData  = [...analyses].reverse().slice(-10).map(a => ({
     name:  new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     score: a.score,
   }))
 
-  const avgScore    = analyses.length ? Math.round(analyses.reduce((s, a) => s + a.score, 0) / analyses.length) : 0
-  const creditsLeft = profile?.plan === 'pro' ? '∞' : (profile?.credits ?? 0)
-  const isPro       = profile?.plan === 'pro'
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+    <div className="space-y-8">
 
-        {upgraded && (
-          <div className="mb-6 flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
-            <CheckCircle className="h-5 w-5 shrink-0" />
-            <p className="text-sm font-medium">You&apos;re now on Pro — unlimited analyses unlocked.</p>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">
-              {profile?.full_name ? `Hi, ${profile.full_name.split(' ')[0]}` : 'Dashboard'}
-            </h1>
-            <p className="text-foreground/50 text-sm">{profile?.email}</p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button asChild size="sm"><Link href="/dashboard/analyze">New Analysis</Link></Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>Sign out</Button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total analyses" value={analyses.length} icon={FileText} />
-          <StatCard
-            label="Average score" value={analyses.length ? avgScore : '—'} icon={TrendingUp}
-            sub={analyses.length ? scoreLabel(avgScore) : undefined}
-          />
-          <StatCard
-            label="Credits left" value={creditsLeft} icon={Zap}
-            sub={isPro ? 'Unlimited · Pro' : 'Free · resets monthly'}
-          />
-          <StatCard
-            label="Plan" value={isPro ? 'Pro' : 'Free'} icon={CreditCard}
-            sub={isPro ? 'Unlimited analyses' : '3 analyses/month'}
-          />
-        </div>
-
-        {/* Billing */}
-        <Card className={`p-6 mb-8 ${isPro ? 'border-primary/30 bg-primary/5' : ''}`}>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              {isPro ? (
-                <>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <p className="font-semibold text-foreground">HireBoost Pro</p>
-                  </div>
-                  <p className="text-sm text-foreground/60">Unlimited analyses · $9.99/month</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-semibold text-foreground mb-1">Upgrade to Pro</p>
-                  <p className="text-sm text-foreground/60">Unlimited analyses, no monthly reset — $9.99/month</p>
-                </>
-              )}
-            </div>
-            <Button
-              variant={isPro ? 'outline' : 'default'}
-              onClick={isPro ? handleManageBilling : handleUpgrade}
-              disabled={billingLoading}
-              className="shrink-0"
-            >
-              {billingLoading
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : isPro ? 'Manage billing' : 'Upgrade — $9.99/mo'}
-            </Button>
-          </div>
-          {!isPro && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {['Unlimited analyses', 'Full keyword reports', 'Rewritten bullet points'].map(f => (
-                <div key={f} className="flex items-center gap-2 text-sm text-foreground/70">
-                  <CheckCircle className="h-4 w-4 text-primary shrink-0" />{f}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Chart */}
-        {chartData.length > 1 && (
-          <Card className="p-6 mb-8">
-            <h2 className="text-base font-semibold text-foreground mb-4">Score history</h2>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} barSize={28}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' } as React.SVGProps<SVGTextElement>} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#888' } as React.SVGProps<SVGTextElement>} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-                />
-                <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                  {chartData.map((entry, i) => (
-                    <Cell key={i} fill={scoreColor(entry.score)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        )}
-
-        {/* History */}
+      {/* Page header */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-base font-semibold text-foreground mb-4">Analysis history</h2>
-          {analyses.length === 0 ? (
-            <Card className="p-12 text-center">
-              <FileText className="h-10 w-10 text-foreground/20 mx-auto mb-3" />
-              <p className="text-foreground/50 mb-4">No analyses yet. Upload your first resume to get started.</p>
-              <Button asChild><Link href="/dashboard/analyze">Analyze a resume</Link></Button>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {analyses.map(a => (
-                <Card key={a.id} className="p-4 flex items-center gap-4 hover:border-primary/30 transition-colors">
-                  <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 text-white"
-                    style={{ background: scoreColor(a.score) }}
-                  >
-                    {a.score}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{a.resume_name}</p>
-                    <p className="text-xs text-foreground/50 flex items-center gap-1 mt-0.5">
-                      <Clock className="h-3 w-3" />
-                      {new Date(a.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' })}
-                      <span className="mx-1">·</span>
-                      <span style={{ color: scoreColor(a.score) }}>{scoreLabel(a.score)}</span>
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-foreground/30 shrink-0" />
-                </Card>
-              ))}
-            </div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {profile?.full_name ? `Good to see you, ${profile.full_name.split(' ')[0]}` : 'Overview'}
+          </h1>
+          <p className="text-sm text-foreground/50 mt-0.5">Here&apos;s how your job applications are doing.</p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard/analyze">
+            <Plus className="h-4 w-4 mr-2" /> New Analysis
+          </Link>
+        </Button>
+      </div>
+
+      {/* Free plan nudge */}
+      {!isPro && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm text-foreground/70">
+              <span className="font-semibold text-foreground">{creditsLeft} credit{creditsLeft !== 1 ? 's' : ''} left</span> this month.
+              Upgrade to Pro for unlimited analyses.
+            </p>
+          </div>
+          <Button size="sm" asChild className="shrink-0">
+            <Link href="/dashboard/billing">Upgrade</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total analyses" value={analyses.length}    icon={FileText}   sub="All time" />
+        <StatCard label="Average score"  value={analyses.length ? avgScore : '—'} icon={TrendingUp} sub={analyses.length ? scoreLabel(avgScore) : 'No analyses yet'} />
+        <StatCard label="Best score"     value={analyses.length ? best : '—'}     icon={TrendingUp} sub={analyses.length ? scoreLabel(best) : undefined} />
+        <StatCard label="Credits left"   value={creditsLeft} icon={Zap} sub={isPro ? 'Pro · unlimited' : 'Resets monthly'} />
+      </div>
+
+      {/* Chart */}
+      {chartData.length >= 2 ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-sm font-semibold text-foreground">Score history</h2>
+            <p className="text-xs text-foreground/40">Last {chartData.length} analyses</p>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={chartData} barSize={24} barCategoryGap="30%">
+              <XAxis
+                dataKey="name"
+                axisLine={false} tickLine={false}
+                tick={{ fontSize: 11, fill: '#9ca3af' } as React.SVGProps<SVGTextElement>}
+              />
+              <YAxis
+                domain={[0, 100]} axisLine={false} tickLine={false}
+                tick={{ fontSize: 11, fill: '#9ca3af' } as React.SVGProps<SVGTextElement>}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.04)', radius: 6 }}
+                contentStyle={{
+                  fontSize: 12, borderRadius: 8,
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                }}
+              />
+              <Bar dataKey="score" radius={[5, 5, 0, 0]}>
+                {chartData.map((entry, i) => (
+                  <Cell key={i} fill={scoreColor(entry.score)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      ) : (
+        <Card className="p-6 flex items-center justify-center h-40 border-dashed">
+          <p className="text-sm text-foreground/40">Run at least 2 analyses to see your score trend.</p>
+        </Card>
+      )}
+
+      {/* History */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-foreground">Recent analyses</h2>
+          {analyses.length > 5 && (
+            <p className="text-xs text-foreground/40">Showing latest 20</p>
           )}
         </div>
 
-      </main>
-      <Footer />
+        {analyses.length === 0 ? (
+          <Card className="p-12 text-center border-dashed">
+            <FileText className="h-10 w-10 text-foreground/15 mx-auto mb-3" />
+            <p className="text-sm text-foreground/40 mb-5">No analyses yet — upload your first resume to get started.</p>
+            <Button asChild>
+              <Link href="/dashboard/analyze">
+                <Plus className="h-4 w-4 mr-2" /> Analyze a resume
+              </Link>
+            </Button>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {analyses.map(a => (
+              <Card
+                key={a.id}
+                className="p-4 flex items-center gap-4 hover:border-primary/25 hover:shadow-sm transition-all cursor-pointer"
+              >
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                  style={{ background: scoreColor(a.score) }}
+                >
+                  {a.score}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{a.resume_name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Clock className="h-3 w-3 text-foreground/30" />
+                    <p className="text-xs text-foreground/40">
+                      {new Date(a.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' })}
+                    </p>
+                    <span className="text-foreground/20 mx-0.5">·</span>
+                    <span className="text-xs font-medium" style={{ color: scoreColor(a.score) }}>
+                      {scoreLabel(a.score)}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-foreground/20 shrink-0" />
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
