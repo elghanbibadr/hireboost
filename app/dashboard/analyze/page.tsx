@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Upload, FileText, Loader2, AlertCircle, Zap } from 'lucide-react'
+import { Upload, FileText, Loader2, AlertCircle, Zap, X } from 'lucide-react'
 
 export default function DashboardAnalyzePage() {
   const router   = useRouter()
@@ -86,114 +85,133 @@ export default function DashboardAnalyzePage() {
   const creditsLeft = isPro ? '∞' : (credits ?? '...')
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-8 fade-up">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+        .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
 
       {/* Page header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex items-end justify-between flex-wrap gap-4 border-b border-white/5 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">New Analysis</h1>
-          <p className="text-sm text-foreground/50 mt-0.5">
-            Upload a resume and paste a job description to get your AI match report.
+          <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
+            New Analysis
+          </h1>
+          <p className="text-white/40 mt-1 text-sm">
+            Match your profile against any job description in seconds.
           </p>
         </div>
-        {/* Credit pill */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50 text-sm">
-          <Zap className="h-3.5 w-3.5 text-primary" />
-          <span className="text-foreground/70 font-medium">
-            {isPro ? 'Unlimited' : `${creditsLeft} credit${creditsLeft !== 1 ? 's' : ''} left`}
+        
+        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
+          <Zap className="h-3.5 w-3.5 text-[#C8FF5E]" />
+          <span className="text-white/70 text-xs font-bold uppercase tracking-wider">
+            {isPro ? 'Pro Member' : `${creditsLeft} Credits Left`}
           </span>
         </div>
       </div>
 
-      {/* No credits warning */}
-      {noCredits && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/8 border border-destructive/20 text-destructive">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium">No credits remaining</p>
-            <p className="text-sm mt-0.5 opacity-80">
-              Your free credits reset on the 1st of next month, or{' '}
-              <Link href="/dashboard/billing" className="underline font-semibold">upgrade to Pro</Link>
-              {' '}for unlimited analyses.
+      {/* Alerts */}
+      {(noCredits || error) && (
+        <div className={`flex items-start gap-3 p-4 rounded-2xl border ${error ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-[#C8FF5E]/5 border-[#C8FF5E]/20 text-[#C8FF5E]'}`}>
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-bold">{error ? 'Analysis Error' : 'Out of Credits'}</p>
+            <p className="opacity-80 mt-0.5">
+              {error || (
+                <>Your free credits reset on the 1st of next month, or <Link href="/dashboard/billing" className="underline font-bold">upgrade to Pro</Link> for unlimited access.</>
+              )}
             </p>
           </div>
         </div>
       )}
 
-      {error && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
-          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-          <p className="text-sm">{error}</p>
-        </div>
-      )}
-
-      <form onSubmit={handleAnalyze} className="space-y-6">
-
+      <form onSubmit={handleAnalyze} className="space-y-8">
         {/* Resume upload */}
-        <Card className="border-2 border-dashed border-border hover:border-primary/40 transition-colors">
-          <label className="cursor-pointer block">
-            <div className="flex flex-col items-center justify-center py-10 px-6">
-              {resumeFile ? (
-                <>
-                  <FileText className="h-10 w-10 text-primary mb-3" />
-                  <p className="font-semibold text-foreground mb-1">{resumeFile.name}</p>
-                  <p className="text-xs text-foreground/40 mb-4">{(resumeFile.size / 1024).toFixed(1)} KB · PDF</p>
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <label className="cursor-pointer">
-                      Change file
-                      <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
-                    </label>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Upload className="h-10 w-10 text-foreground/20 mb-3" />
-                  <p className="font-semibold text-foreground mb-1">Drop your resume here</p>
-                  <p className="text-xs text-foreground/40 mb-4">PDF only · max 5MB</p>
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <label className="cursor-pointer">
-                      Choose file
-                      <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
-                    </label>
-                  </Button>
-                </>
-              )}
-            </div>
-          </label>
-        </Card>
+        <div className="space-y-3">
+          <label className="text-xs font-bold text-white/40 uppercase tracking-widest px-1">1. Your Resume</label>
+          <div 
+            className={`relative group border-2 border-dashed rounded-[32px] transition-all duration-300 ${
+              resumeFile ? 'border-[#C8FF5E]/50 bg-[#C8FF5E]/5' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
+            }`}
+          >
+            <label className="cursor-pointer block">
+              <div className="flex flex-col items-center justify-center py-12 px-6">
+                {resumeFile ? (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-[#C8FF5E] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(200,255,94,0.3)]">
+                      <FileText className="h-8 w-8 text-black" />
+                    </div>
+                    <p className="font-bold text-white text-lg mb-1">{resumeFile.name}</p>
+                    <p className="text-xs text-white/40 mb-6 uppercase tracking-widest">{(resumeFile.size / 1024).toFixed(1)} KB • PDF</p>
+                    <Button type="button" variant="ghost" className="text-white/60 hover:text-white" asChild>
+                      <label className="cursor-pointer">
+                        Change File
+                        <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
+                      </label>
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/10 group-hover:scale-110 transition-transform">
+                      <Upload className="h-6 w-6 text-white/40" />
+                    </div>
+                    <p className="font-bold text-white text-lg mb-1">Upload Resume</p>
+                    <p className="text-xs text-white/30 mb-6">Drag & drop or click to browse (PDF, Max 5MB)</p>
+                    <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" id="resume-upload" />
+                    <Button type="button" className="bg-white text-black hover:bg-white/90 font-bold px-8 rounded-xl" onClick={() => document.getElementById('resume-upload')?.click()}>
+                      Choose File
+                    </Button>
+                  </>
+                )}
+              </div>
+            </label>
+          </div>
+        </div>
 
         {/* Job description */}
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Job Description</label>
-          <textarea
-            value={jobDescription}
-            onChange={e => { setJobDescription(e.target.value); setError(null) }}
-            placeholder="Paste the full job description — responsibilities, requirements, skills..."
-            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none text-sm"
-            rows={10}
-            disabled={isLoading || noCredits}
-          />
-          <p className="text-xs text-foreground/30 mt-1.5">{jobDescription.length} characters</p>
+        <div className="space-y-3">
+          <label className="text-xs font-bold text-white/40 uppercase tracking-widest px-1">2. Job Description</label>
+          <div className="relative">
+            <textarea
+              value={jobDescription}
+              onChange={e => { setJobDescription(e.target.value); setError(null) }}
+              placeholder="Paste the target job description here..."
+              className="w-full px-6 py-6 border border-white/10 rounded-[24px] bg-white/[0.02] text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-[#C8FF5E]/20 focus:border-[#C8FF5E]/40 transition-all text-base min-h-[300px] resize-none"
+              disabled={isLoading || noCredits}
+            />
+            <div className="absolute bottom-4 right-6 flex items-center gap-3">
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">
+                {jobDescription.length} chars
+              </span>
+            </div>
+          </div>
         </div>
 
-        {isLoading && loadingStep && (
-          <div className="flex items-center gap-2.5 text-sm text-foreground/50">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            {loadingStep}
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          disabled={isLoading || !resumeFile || !jobDescription.trim() || noCredits}
-          size="lg"
-          className="w-full"
-        >
-          {isLoading
-            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{loadingStep || 'Analyzing...'}</>
-            : 'Analyze Resume'}
-        </Button>
-
+        {/* Action button */}
+        <div className="pt-4">
+          <Button
+            type="submit"
+            disabled={isLoading || !resumeFile || !jobDescription.trim() || noCredits}
+            className={`w-full py-8 rounded-2xl text-lg font-bold transition-all shadow-xl ${
+              isLoading ? 'bg-white/5 text-white/40' : 'bg-[#C8FF5E] text-black hover:scale-[1.01] hover:shadow-[#C8FF5E]/10'
+            }`}
+          >
+            {isLoading ? (
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>{loadingStep || 'Processing...'}</span>
+                </div>
+              </div>
+            ) : (
+              'Start AI Analysis'
+            )}
+          </Button>
+          <p className="text-center text-white/20 text-[10px] uppercase tracking-[0.2em] mt-4">
+            Powered by GPT-4o Vision & Analysis
+          </p>
+        </div>
       </form>
     </div>
   )

@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const creditsLeft = profile?.plan === 'pro' ? '∞' : (profile?.credits ?? 0)
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-screen bg-[#080808]/90 backdrop-blur-xl border-b border-white/[0.06]">
       <Sidebar
         userEmail={profile?.email ?? user.email ?? ''}
         userName={profile?.full_name ?? ''}
