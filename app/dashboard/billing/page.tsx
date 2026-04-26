@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import {
   CheckCircle, Sparkles, Zap, FileText,
   Loader2, ExternalLink, AlertCircle,
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface Profile {
   plan: 'free' | 'pro'
@@ -74,189 +74,192 @@ export default function BillingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
+        <Loader2 className="h-5 w-5 animate-spin text-[#C8FF5E]" />
       </div>
     )
   }
 
   const isPro       = profile?.plan === 'pro'
-  const creditsLeft = isPro ? '∞' : (profile?.credits ?? 0)
-  const creditsUsed = isPro ? '—' : 3 - (profile?.credits ?? 0)
+  const creditsUsed = isPro ? 0 : 3 - (profile?.credits ?? 0)
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-10 max-w-4xl pb-20 fade-up">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+        .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
 
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Billing</h1>
-        <p className="text-sm text-foreground/50 mt-0.5">Manage your plan and subscription.</p>
+      {/* Page Header */}
+      <div className="border-b border-white/5 pb-6">
+        <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
+          Subscription
+        </h1>
+        <p className="text-white/40 mt-1 text-sm">
+          Select the plan that fits your career goals.
+        </p>
       </div>
 
-      {/* Error */}
       {error && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          <p className="text-sm">{error}</p>
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400">
+          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+          <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
-      {/* Current plan summary */}
-      <Card className={`p-6 ${isPro ? 'border-primary/30 bg-primary/5' : ''}`}>
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              {isPro
-                ? <Sparkles className="h-4 w-4 text-primary" />
-                : <Zap className="h-4 w-4 text-foreground/40" />
-              }
-              <p className="font-semibold text-foreground">{isPro ? 'Pro Plan' : 'Free Plan'}</p>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                isPro ? 'bg-primary/15 text-primary' : 'bg-muted text-foreground/50'
-              }`}>
-                {isPro ? 'Active' : 'Current'}
-              </span>
+      {/* Current Plan Summary Card */}
+      <div className={`p-8 rounded-[32px] border transition-all duration-500 ${
+        isPro 
+          ? 'bg-[#C8FF5E]/5 border-[#C8FF5E]/30 shadow-[0_0_40px_rgba(200,255,94,0.05)]' 
+          : 'bg-white/[0.02] border-white/10'
+      }`}>
+        <div className="flex items-center justify-between flex-wrap gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${isPro ? 'bg-[#C8FF5E] text-black' : 'bg-white/5 text-white/40'}`}>
+                {isPro ? <Sparkles className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white leading-none">
+                  {isPro ? 'Pro Member' : 'Free Member'}
+                </h3>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#C8FF5E]">
+                  {isPro ? 'Active Subscription' : 'Limited Access'}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-foreground/60">
-              {isPro ? '$9.99 / month · Unlimited analyses' : 'Free forever · 3 analyses per month'}
-            </p>
           </div>
-          {isPro ? (
-            <Button variant="outline" size="sm" onClick={handlePortal} disabled={actionLoading}>
-              {actionLoading
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <><ExternalLink className="h-3.5 w-3.5 mr-1.5" />Manage billing</>}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={handleUpgrade} disabled={actionLoading}>
-              {actionLoading
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : 'Upgrade to Pro'}
-            </Button>
-          )}
+          
+          <Button 
+            variant={isPro ? "outline" : "default"} 
+            className={`rounded-xl px-8 h-12 font-bold transition-all ${
+              isPro 
+                ? 'border-white/10 text-white hover:bg-white/5' 
+                : 'bg-[#C8FF5E] text-black hover:scale-105'
+            }`}
+            onClick={isPro ? handlePortal : handleUpgrade} 
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isPro ? (
+              <><ExternalLink className="h-4 w-4 mr-2" /> Billing Portal</>
+            ) : (
+              'Get Pro Access'
+            )}
+          </Button>
         </div>
 
-        {/* Usage bar for free plan */}
         {!isPro && (
-          <div className="mt-5 pt-5 border-t border-border">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-foreground/60">Monthly usage</p>
-              <p className="text-xs text-foreground/40">{creditsUsed} of 3 used</p>
+          <div className="mt-8 pt-8 border-t border-white/5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Analysis Usage</p>
+              <p className="text-xs font-bold text-white/60">{creditsUsed} / 3 Used</p>
             </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-2 rounded-full bg-white/5 overflow-hidden border border-white/5">
               <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${((creditsUsed as number) / 3) * 100}%` }}
+                className="h-full rounded-full bg-[#C8FF5E] transition-all duration-1000 shadow-[0_0_10px_rgba(200,255,94,0.5)]"
+                style={{ width: `${(creditsUsed / 3) * 100}%` }}
               />
             </div>
-            <p className="text-xs text-foreground/40 mt-2">
-              {creditsLeft} credit{creditsLeft !== 1 ? 's' : ''} remaining · resets on the 1st of next month
+            <p className="text-[10px] text-white/20 mt-3 font-medium">
+              Your credits will reset on the 1st of the month.
             </p>
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* Plan comparison */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        {/* Free */}
-        <Card className={`p-6 ${!isPro ? 'border-primary/30' : ''}`}>
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-semibold text-foreground">Free</p>
-              {!isPro && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-foreground/50">
-                  Current plan
-                </span>
-              )}
+      {/* Pricing Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Free Plan Card */}
+        <div className={`p-8 rounded-[32px] border ${!isPro ? 'border-white/20 bg-white/[0.03]' : 'border-white/5 bg-transparent'}`}>
+          <div className="mb-8">
+            <h4 className="text-lg font-bold text-white mb-1">Free</h4>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-white">$0</span>
+              <span className="text-white/30 text-sm">/month</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">$0<span className="text-sm font-normal text-foreground/40">/mo</span></p>
           </div>
-          <ul className="space-y-2.5">
+          <ul className="space-y-4 mb-8">
             {FREE_FEATURES.map(f => (
-              <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/70">
-                <CheckCircle className="h-4 w-4 text-foreground/30 shrink-0" />{f}
+              <li key={f} className="flex items-center gap-3 text-sm text-white/50">
+                <CheckCircle className="h-4 w-4 text-white/20 shrink-0" /> {f}
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
 
-        {/* Pro */}
-        <Card className={`p-6 relative overflow-hidden ${isPro ? 'border-primary/30 bg-primary/5' : 'border-primary/20'}`}>
-          {/* Popular badge */}
-          <div className="absolute top-3 right-3">
-            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary text-primary-foreground">
-              {isPro ? 'Your plan' : 'Most popular'}
-            </span>
-          </div>
-
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <p className="font-semibold text-foreground">Pro</p>
+        {/* Pro Plan Card */}
+        <div className={`p-8 rounded-[32px] border relative overflow-hidden transition-all duration-300 ${
+          isPro 
+            ? 'border-[#C8FF5E]/40 bg-[#C8FF5E]/5' 
+            : 'border-white/10 bg-white/[0.01] hover:border-white/20'
+        }`}>
+          <div className="absolute top-6 right-6">
+            <div className="bg-[#C8FF5E] text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+              {isPro ? 'Your Plan' : 'Most Popular'}
             </div>
-            <p className="text-2xl font-bold text-foreground">$9.99<span className="text-sm font-normal text-foreground/40">/mo</span></p>
+          </div>
+          
+          <div className="mb-8">
+            <h4 className="text-lg font-bold text-white mb-1">Pro</h4>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-white">$9.99</span>
+              <span className="text-white/30 text-sm">/month</span>
+            </div>
           </div>
 
-          <ul className="space-y-2.5 mb-6">
+          <ul className="space-y-4 mb-10">
             {PRO_FEATURES.map(f => (
-              <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/80">
-                <CheckCircle className="h-4 w-4 text-primary shrink-0" />{f}
+              <li key={f} className="flex items-center gap-3 text-sm text-white/80">
+                <CheckCircle className="h-4 w-4 text-[#C8FF5E] shrink-0 shadow-[0_0_10px_rgba(200,255,94,0.3)]" /> {f}
               </li>
             ))}
           </ul>
 
           {!isPro && (
-            <Button className="w-full" onClick={handleUpgrade} disabled={actionLoading}>
-              {actionLoading
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : 'Upgrade to Pro →'}
+            <Button 
+              className="w-full h-14 rounded-2xl bg-white text-black hover:bg-[#C8FF5E] transition-all font-bold text-md"
+              onClick={handleUpgrade}
+              disabled={actionLoading}
+            >
+              {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Get Started'}
             </Button>
           )}
-
-          {isPro && (
-            <Button variant="outline" className="w-full" onClick={handlePortal} disabled={actionLoading}>
-              {actionLoading
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : 'Manage subscription'}
-            </Button>
-          )}
-        </Card>
+        </div>
       </div>
 
-      {/* FAQ */}
-      <Card className="p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-foreground">Common questions</h2>
-        {[
-          {
-            q: 'What happens when my free credits run out?',
-            a: "You'll need to wait until the 1st of next month when they reset, or upgrade to Pro for unlimited access.",
-          },
-          {
-            q: 'Can I cancel Pro at any time?',
-            a: "Yes. Click 'Manage billing' above to access the Stripe portal where you can cancel with one click. You keep Pro until the end of your billing period.",
-          },
-          {
-            q: 'Is my payment information secure?',
-            a: 'All billing is handled by Stripe. We never store your card details on our servers.',
-          },
-        ].map(({ q, a }) => (
-          <div key={q}>
-            <p className="text-sm font-medium text-foreground mb-1">{q}</p>
-            <p className="text-sm text-foreground/50">{a}</p>
-          </div>
-        ))}
-      </Card>
+      {/* FAQ Section */}
+      <div className="p-8 rounded-[32px] border border-white/5 bg-white/[0.01]">
+        <h2 className="text-xs font-black text-white/30 uppercase tracking-[0.2em] mb-8">Frequently Asked Questions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+          {[
+            {
+              q: 'When do credits reset?',
+              a: "Free credits are topped up to 3 on the 1st of every month automatically.",
+            },
+            {
+              q: 'Can I cancel anytime?',
+              a: "Yes. Use the billing portal to cancel. You'll retain Pro access until your current period ends.",
+            },
+          ].map(({ q, a }) => (
+            <div key={q} className="space-y-2">
+              <p className="text-sm font-bold text-white">{q}</p>
+              <p className="text-sm text-white/40 leading-relaxed">{a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Invoice note for Pro users */}
+      {/* Footer Invoice Note */}
       {isPro && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/60 border border-border">
-          <FileText className="h-4 w-4 text-foreground/40 mt-0.5 shrink-0" />
-          <p className="text-sm text-foreground/60">
-            To view past invoices and payment history, open the{' '}
-            <button onClick={handlePortal} className="text-primary font-medium hover:underline">
-              billing portal
+        <div className="flex items-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/5">
+          <FileText className="h-5 w-5 text-white/20 shrink-0" />
+          <p className="text-xs text-white/40 font-medium">
+            Need to download invoices or change your payment method? Open the{' '}
+            <button onClick={handlePortal} className="text-[#C8FF5E] font-bold hover:underline">
+              Stripe Billing Portal
             </button>
-            .
           </p>
         </div>
       )}
