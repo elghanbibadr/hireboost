@@ -85,7 +85,7 @@ export default function Results() {
         <div className="mb-12 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
              <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/40">
-               Analysis Report
+               Analysis Reports
              </span>
           </div>
           <h1 className="text-5xl font-bold tracking-tight mb-2" style={{ fontFamily: "'Instrument Serif', serif" }}>
