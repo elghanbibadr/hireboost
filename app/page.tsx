@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 // ── Auth-aware navbar ─────────────────────────────────────────────────────────
-function Navbar({ user }: { user: { email: string; name: string } | null }) {
+export function Navbar({ user }: { user: { email: string; name: string } | null }) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {

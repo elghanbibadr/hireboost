@@ -23,7 +23,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const creditsLeft = profile?.plan === 'pro' ? '∞' : (profile?.credits ?? 0)
 
   return (
-    <div className="flex min-h-screen bg-[#080808]/90 backdrop-blur-xl border-b border-white/[0.06]">
+    <div className="flex min-h-screen bg-[#050505]">
+      {/* Sidebar - Desktop: Fixed | Mobile: Overlay */}
       <Sidebar
         userEmail={profile?.email ?? user.email ?? ''}
         userName={profile?.full_name ?? ''}
@@ -32,8 +33,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       />
 
       {/* Main content area */}
-      <div className="flex-grow flex flex-col min-w-0">
-        <main className="flex-grow px-4 sm:px-8 py-8 max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex flex-col min-w-0 "> {/* Added lg:pl-72 to account for sidebar width */}
+        <main className="flex-1 px-4 sm:px-8 py-24 lg:py-8 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>
