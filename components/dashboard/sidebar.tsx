@@ -54,15 +54,10 @@ export function Sidebar({ userEmail, userName, plan, creditsLeft }: SidebarProps
 
       {/* Plan badge */}
       <div className="px-4 mb-4">
-        {plan === 'pro' ? (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#C8FF5E]/5 border border-[#C8FF5E]/20">
-            <Sparkles className="h-4 w-4 text-[#C8FF5E] shrink-0" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#C8FF5E]">Pro Unlimited</span>
-          </div>
-        ) : (
+       
           <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-0.5">Free Plan</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-0.5">{plan} Plan</p>
               <p className="text-xs font-bold text-white/80">{creditsLeft} Left</p>
             </div>
             <Link
@@ -73,7 +68,7 @@ export function Sidebar({ userEmail, userName, plan, creditsLeft }: SidebarProps
               Upgrade
             </Link>
           </div>
-        )}
+        
       </div>
 
       {/* Navigation */}

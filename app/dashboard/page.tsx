@@ -102,7 +102,7 @@ export default function DashboardPage() {
     ? Math.round(analyses.reduce((s, a) => s + a.score, 0) / analyses.length)
     : 0
   const best        = analyses.length ? Math.max(...analyses.map(a => a.score)) : 0
-  const creditsLeft = isPro ? '∞' : (profile?.credits ?? 0)
+  const creditsLeft = (profile?.credits ?? 0)
 
   const chartData  = [...analyses].reverse().slice(-10).map(a => ({
     name:  new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),

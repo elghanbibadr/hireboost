@@ -82,7 +82,7 @@ export default function DashboardAnalyzePage() {
 
   const noCredits  = plan === 'free' && credits === 0
   const isPro      = plan === 'pro'
-  const creditsLeft = isPro ? '∞' : (credits ?? '...')
+  const creditsLeft =  (credits ?? '...')
 
   return (
     <div className="max-w-3xl space-y-8 fade-up">

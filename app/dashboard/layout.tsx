@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('id', user.id)
     .single()
 
-  const creditsLeft = profile?.plan === 'pro' ? '∞' : (profile?.credits ?? 0)
+  const creditsLeft = (profile?.credits ?? 0)
 
   return (
     <div className="flex min-h-screen bg-[#050505]">
