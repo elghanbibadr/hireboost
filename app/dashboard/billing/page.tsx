@@ -56,7 +56,7 @@ export default function BillingPage() {
   const handleUpgrade = async () => {
     setError(null)
     setActionLoading(true)
-   const res = await fetch('/api/checkout', { 
+   const res = await fetch('/api/stripe/checkout', { 
       method: 'POST',
       // 2. Tell the server to expect JSON data
       headers: {
@@ -143,7 +143,7 @@ body: JSON.stringify({
             variant={isPro ? "outline" : "default"} 
             className={`rounded-xl px-8 h-12 font-bold transition-all ${
               isPro 
-                ? 'border-white/10 text-white hover:bg-white/5' 
+                ? 'border-white/10  bg-[#C8FF5E]/5  text-white hover:bg-white/5' 
                 : 'bg-[#C8FF5E] text-black hover:scale-105'
             }`}
             onClick={isPro ? handlePortal : handleUpgrade} 
@@ -152,7 +152,7 @@ body: JSON.stringify({
             {actionLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : isPro ? (
-              <><ExternalLink className="h-4 w-4 mr-2" /> Billing Portal</>
+              <><ExternalLink className="h-4 w-4 mr-2" /> Billing Portals</>
             ) : (
               'Get Pro Access'
             )}
@@ -262,7 +262,7 @@ body: JSON.stringify({
 
       {/* Footer Invoice Note */}
       {isPro && (
-        <div className="flex items-center gap-4 p-6 rounded-2xl bg-white/5 border border-white/5">
+        <div className="flex items-center gap-4 p-6 rounded-2xl border border-white/5">
           <FileText className="h-5 w-5 text-white/20 shrink-0" />
           <p className="text-xs text-white/40 font-medium">
             Need to download invoices or change your payment method? Open the{' '}
