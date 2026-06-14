@@ -47,7 +47,7 @@ export default function SignUp() {
 
     setIsLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { error ,data} = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
@@ -55,6 +55,10 @@ export default function SignUp() {
         data: { full_name: formData.name },
       },
     })
+
+
+    console.log('signup data',data)
+console.log("error",error)
 
     if (error) {
       setError(error.message)

@@ -9,19 +9,19 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'HireBoost - AI-Powered Resume Optimizer',
   description: 'Optimize your resume with AI and land more interviews. Get instant analysis, missing keywords, and improvement suggestions.',
-  generator: 'v0.app',
+  
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/iconfav.svg',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/iconfav.svg',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/iconfav.svg',
         type: 'image/svg+xml',
       },
     ],
@@ -34,25 +34,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-
-
   return (
     <html lang="en">
-        <head>
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
           rel="stylesheet"
         />
       </head>
+      {/* 💡 Tip: You imported Geist fonts above, but if you're using DM Sans via Google Fonts, "font-sans" works perfectly assuming it's configured in your tailwind.config.js */}
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
