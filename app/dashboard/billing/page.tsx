@@ -56,7 +56,16 @@ export default function BillingPage() {
   const handleUpgrade = async () => {
     setError(null)
     setActionLoading(true)
-    const res  = await fetch('/api/stripe/checkout', { method: 'POST' })
+   const res = await fetch('/api/checkout', { 
+      method: 'POST',
+      // 2. Tell the server to expect JSON data
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // 3. Stringify the object containing your priceId
+body: JSON.stringify({ 
+  priceId: "price_1Thw4IRppTlwPIfzlWJExLob" 
+})    })
     const data = await res.json()
     if (data.url) window.location.href = data.url
     else { setError(data.message ?? 'Something went wrong.'); setActionLoading(false) }
