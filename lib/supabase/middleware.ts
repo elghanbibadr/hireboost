@@ -50,6 +50,12 @@ export async function updateSession(request: NextRequest) {
   const redirectUrl = new URL('/signin', request.url)
 return NextResponse.redirect(redirectUrl)
   }
+  // 🔒 Reject users who have not verified their email address
+
+  console.log("user from middleware",user)
+    if (user && !user.user_metadata.email_verified) {
+      return NextResponse.redirect(new URL('/verify-email?error=unverified', request.url))
+    }
 
   if (isAuthRoute && user) {
     // Already logged in → skip login/signup, go to dashboard

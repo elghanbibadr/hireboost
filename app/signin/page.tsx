@@ -27,8 +27,9 @@ export default function SignIn() {
     setError(null)
     setIsisLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error ,data} = await supabase.auth.signInWithPassword({ email, password })
 
+    console.log("sign in data",data)
     if (error) {
       setError(error.message)
       setIsisLoading(false)
@@ -63,7 +64,7 @@ export default function SignIn() {
       </nav>
  
       {/* Main */}
-      <main className="flex-grow flex items-center justify-center px-4 py-12">
+      <main className="flex-grow flex items-center justify-center px-4 py-12 md:py-6">
         <div className="w-full max-w-md fade-up-d1">
  
           {/* Header */}
@@ -95,11 +96,11 @@ export default function SignIn() {
             </button> */}
  
             {/* Divider */}
-            <div className="flex items-center gap-3 my-6">
+            {/* <div className="flex items-center gap-3 my-6">
               <div className="flex-grow h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>or</span>
               <div className="flex-grow h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
-            </div>
+            </div> */}
  
             {/* Error */}
             {error && (
