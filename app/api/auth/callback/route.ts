@@ -1,21 +1,27 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
-  // 1. Extract the secure verification code sent by Supabase from the URL
   const code = requestUrl.searchParams.get('code')
 
+  console.log("code from route:", code)
+
   if (code) {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    // 🌟 FIX: Add "await" right here because createClient() is an async function!
+    const supabase = await createClient()
     
-    // 2. Exchange the single-use code for a permanent, secure user session cookie
-    await supabase.auth.exchangeCodeForSession(code)
+    // Now TypeScript knows 'supabase' is the fully resolved client instance
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (error) {
+      console.error("Auth session exchange failed:", error.message)
+      // Optional: Redirect to a dedicated error page if the link is expired/invalid
+      return NextResponse.redirect(new URL('/auth/auth-error', request.url))
+    }
   }
 
-  // 3. Send them to your verified page with the success flag we handled earlier!
+  // Send them to your verified page with the success flag
   return NextResponse.redirect(new URL('/verify-email?success=true', request.url))
 }

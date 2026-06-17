@@ -53,7 +53,7 @@ export default function SignUp() {
     email: formData.email,
     password: formData.password,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       data: { full_name: formData.name },
     },
   })
