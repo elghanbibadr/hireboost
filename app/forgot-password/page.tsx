@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft, KeyRound, Loader2 } from 'lucide-react'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -21,7 +23,7 @@ export default function ForgotPasswordPage() {
       })
 
       const data = await response.json()
-console.log("res",response)
+
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong. Please try again.')
       }
@@ -42,61 +44,90 @@ console.log("res",response)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
-      <div className="w-full max-w-md p-8 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl">
-        {/* Keyhole Icon */}
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400 mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
-          </svg>
+    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center px-6 selection:bg-[#C8FF5E] selection:text-black">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+        .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); }
+      `}</style>
+
+      <div className="text-center max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Decorative Badge */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/40 flex items-center gap-1.5">
+            <KeyRound className="h-3 w-3 text-[#C8FF5E]" /> Security Access
+          </span>
         </div>
 
-        <h2 className="text-2xl font-semibold text-zinc-100 tracking-tight text-center">Forgot your password?</h2>
-        <p className="mt-2 text-sm text-zinc-400 text-center leading-relaxed">
-          No worries. Enter your email address and we'll send you a link to reset it.
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              disabled={isLoading}
-              className="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-700 focus:ring-1 focus:ring-zinc-700 transition disabled:opacity-50"
-            />
-          </div>
-
-          {message && (
-            <div className={`p-4 rounded-xl text-xs font-medium border ${
-              message.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            }`}>
-              {message.text}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl bg-zinc-100 text-zinc-950 font-medium text-sm transition-all hover:bg-zinc-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-zinc-400 disabled:opacity-50 disabled:scale-100"
+        {/* Form Container Wrapper */}
+        <div className="relative mb-6 p-8 glass-card rounded-[40px] border-white/10 overflow-hidden text-left">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#C8FF5E]/5 blur-[80px] -z-10" />
+          
+          <h1 
+            className="text-6xl font-black mb-1 text-center tracking-tighter text-[#C8FF5E] drop-shadow-[0_0_15px_rgba(200,255,94,0.15)]"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
           >
-            {isLoading ? 'Sending link...' : 'Send Reset Link'}
-          </button>
-        </form>
+            Recover Account
+          </h1>
+          <p className="text-white/50 text-xs text-center leading-relaxed font-medium max-w-xs mx-auto mb-8">
+            Enter your credentials down below to dispatch an authenticated password override link.
+          </p>
 
-        <div className="mt-6 text-center">
-          <Link href="/login" className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition">
-            ← Back to Sign In
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-[0.15em] text-white/40 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@domain.com"
+                disabled={isLoading}
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#C8FF5E]/40 focus:ring-1 focus:ring-[#C8FF5E]/40 transition disabled:opacity-50"
+              />
+            </div>
+
+            {message && (
+              <div className={`p-4 rounded-xl text-xs font-semibold border ${
+                message.type === 'success' 
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
+                {message.text}
+              </div>
+            )}
+
+            <Button 
+              type="submit"
+              disabled={isLoading}
+              size="lg" 
+              className="w-full bg-[#C8FF5E] text-black font-bold rounded-xl hover:scale-[1.02] transition-all gap-2 disabled:opacity-50 disabled:scale-100"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin stroke-[2.5]" />
+                  Sending Verification...
+                </>
+              ) : (
+                'Send Reset Link'
+              )}
+            </Button>
+          </form>
+        </div>
+
+        {/* Return Button */}
+        <div className="flex justify-center">
+          <Link 
+            href="/signin" 
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-[#C8FF5E] transition-colors"
+          >
+            <ArrowLeft className="h-3 w-3" /> Back to Log In
           </Link>
         </div>
+
       </div>
     </div>
   )
