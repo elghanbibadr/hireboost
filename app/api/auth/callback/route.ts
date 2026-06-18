@@ -5,23 +5,24 @@ import type { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  
+  // 1. Look for a 'next' destination dynamically. 
+  // If none is provided, default back to your verification success screen.
+  const nextTarget = requestUrl.searchParams.get('next') ?? '/verify-email?success=true'
 
   console.log("code from route:", code)
+  console.log("redirecting next to:", nextTarget)
 
   if (code) {
-    // 🌟 FIX: Add "await" right here because createClient() is an async function!
     const supabase = await createClient()
-    
-    // Now TypeScript knows 'supabase' is the fully resolved client instance
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (error) {
       console.error("Auth session exchange failed:", error.message)
-      // Optional: Redirect to a dedicated error page if the link is expired/invalid
       return NextResponse.redirect(new URL('/auth/auth-error', request.url))
     }
   }
 
-  // Send them to your verified page with the success flag
-  return NextResponse.redirect(new URL('/verify-email?success=true', request.url))
+  // 2. 🌟 FIX: Instead of hardcoding /verify-email, route them to nextTarget!
+  return NextResponse.redirect(new URL(nextTarget, request.url))
 }
