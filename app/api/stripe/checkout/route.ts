@@ -21,13 +21,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Validate price ID
-    console.log("req",req)
-    const { priceId } = await req.json()
-    console.log("price id",priceId)
+    const { plan } = await req.json()
+    let priceId = ""
+    if (plan === "pro") {
+        priceId = process.env.STRIPE_PRO_PRICE_ID!
+}
 
-    if (!priceId || !VALID_PRICE_IDS.has(priceId)) {
-      return NextResponse.json({ message: 'Invalid price ID' }, { status: 400 })
-    }
+    if (!priceId) {
+return NextResponse.json({ message: 'Invalid plan selected' }, { status: 400 }) 
+   }
 
     // 3. Fetch profile to get or create Stripe customer
     const { data: profile, error: profileError } = await supabase
