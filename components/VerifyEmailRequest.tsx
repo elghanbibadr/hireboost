@@ -1,25 +1,48 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
+import { Mail, ArrowLeft } from 'lucide-react'
 
 export default function VerifyEmailRequestPage() {
   return (
-    <div className="w-full max-w-md mx-auto p-8 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl text-center">
-      {/* Animated Envelope Icon */}
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400 mb-6 animate-bounce">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-        </svg>
+    <>
+      {/* Awaiting Status Ribbon */}
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/40 flex items-center gap-1.5">
+          <Mail className="h-3 w-3 text-[#C8FF5E] animate-pulse" /> Awaiting Handshake
+        </span>
       </div>
 
-      <h2 className="text-2xl font-semibold text-zinc-100 tracking-tight">Check your inbox</h2>
-      <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-        We sent a verification link to your email address. Please click the link to secure your account and activate your workspace.
-      </p>
+      {/* Main Glass Content Pane */}
+      <div className="relative mb-6 p-8 glass-card rounded-[40px] border-white/10 overflow-hidden text-left">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#C8FF5E]/5 blur-[80px] -z-10" />
+        
+        <h1 
+          className="text-6xl font-black mb-1 text-center tracking-tighter text-[#C8FF5E] drop-shadow-[0_0_15px_rgba(200,255,94,0.15)]"
+          style={{ fontFamily: "'Instrument Serif', serif" }}
+        >
+          Check Inbox
+        </h1>
+        
+        <p className="text-white/50 text-xs text-center leading-relaxed font-medium max-w-xs mx-auto mb-4">
+          An encrypted deployment link was dispatched to your address. Complete the authorization using that link to unlock access.
+        </p>
 
-      <div className="mt-8 pt-6 border-t border-zinc-800 text-xs text-zinc-500">
-        Didn't receive the email? Check your spam folder or try signing in again to resend.
+        <div className="pt-6 border-t border-white/5 text-[10px] text-center font-bold tracking-wider uppercase text-white/20 max-w-xs mx-auto leading-relaxed">
+          Missing the token? Look inside your spam filter folder or re-trigger configuration setup.
+        </div>
       </div>
-    </div>
+
+      {/* Navigation Return Hook */}
+      <div className="flex justify-center">
+        <Link 
+          href="/signin" 
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/40 hover:text-[#C8FF5E] transition-colors"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to Log In
+        </Link>
+      </div>
+    </>
   )
 }

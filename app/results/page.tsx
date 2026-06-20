@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { 
   Lock, CheckCircle, XCircle, TrendingUp, 
-  AlertTriangle, ArrowRight, Zap, Sparkles 
+  AlertTriangle, ArrowRight, Zap, Sparkles, 
+  ArrowLeft
 } from 'lucide-react'
 
 interface AnalysisResult {
@@ -83,6 +84,15 @@ export default function Results() {
         
         {/* Header */}
         <div className="mb-12 text-center sm:text-left">
+              <Button 
+                    onClick={() => router.push('/dashboard')}
+                    size="lg" 
+                    className="cursor-pointer mb-6 bg-[#C8FF5E] text-black font-bold rounded-xl hover:scale-[1.02] transition-all gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
+
+                    Go to Dashboard
+                  </Button>
           <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
              <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/40">
                Analysis Reports

@@ -255,6 +255,9 @@ body {
   color: white;
   font-size: 14px;
 }
+.button{
+  cursor: pointer !important;
+}
 
 .icon {
   position: absolute;
