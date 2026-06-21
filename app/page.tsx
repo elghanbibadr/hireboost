@@ -1,7 +1,4 @@
-"use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 import Navbar from "@/components/navbar";
 import { Hero } from "@/components/hero";
@@ -11,28 +8,20 @@ import HowItWorks from "@/components/howItWorks";
 import Pricing from "@/components/pricing";
 import { Footer } from "@/components/footer";
 import Cta from "@/components/cta";
+import { createClient } from "@/lib/supabase/server";
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-export default function Home() {
-  const supabase = createClient();
-  const [user, setUser] = useState<{ email: string; name: string } | null>(
-    null,
-  );
+ export default async function Home() {
+  const supabase =await  createClient();
+const { data: { user } } = await supabase.auth.getUser();
+   console.log("user",user)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user)
-        setUser({
-          email: user.email ?? "",
-          name: user.user_metadata?.full_name ?? "",
-        });
-    });
-  }, [supabase]);
-
+const userName = user?.user_metadata?.full_name || user?.email || "Guest" 
   return (
     <>
       <Navbar user={user} />
-      <Hero user={{ userName: user?.name ?? "" }} />
+      <Hero userName={userName} />
+
 
       {/* ── SOCIAL PROOF TICKER ────────────────────────────────────────────── */}
       <SocialProofTicker />
@@ -42,7 +31,7 @@ export default function Home() {
       <HowItWorks />
 
       {/* ── PRICING ────────────────────────────────────────────────────────── */}
-      <Pricing user={{ userName: user?.name ?? "" }} />
+      <Pricing user={{ userName }} />
 
       {/* ── CTA ────────────────────────────────────────────────────────────── */}
       <Cta />

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 import { ScoreCard } from './scoreCard'
 
-export const Hero = ({user:{ userName}}:{user: { userName: string }}) => {
+export const Hero = ( {userName}: { userName: string }) => {
   return (
    
     <>

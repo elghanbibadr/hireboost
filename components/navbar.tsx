@@ -1,9 +1,11 @@
+"use client"
+import { User } from "@supabase/supabase-js";
 import { FileSearch } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 // ── Auth-aware navbar ─────────────────────────────────────────────────────────
-export default function Navbar({ user }: { user: { email: string; name: string } | null }) {
+export default function Navbar({ user }: {user: User | null}) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -12,8 +14,8 @@ export default function Navbar({ user }: { user: { email: string; name: string }
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  const initials = user?.name
-    ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     : user?.email?.slice(0, 2).toUpperCase() ?? ''
 
   return (
