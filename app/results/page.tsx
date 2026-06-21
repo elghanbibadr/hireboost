@@ -90,7 +90,7 @@ export default function Results() {
                     className="cursor-pointer mb-6 bg-[#C8FF5E] text-black font-bold rounded-xl hover:scale-[1.02] transition-all gap-2"
                   >
                     <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
-
+t.co/eJyXbiNJxO
                     Go to Dashboard
                   </Button>
           <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Footer } from '@/components/footer'
 import { Upload, FileText, Loader2, AlertCircle, Lock, Zap, CheckCircle2 } from 'lucide-react'
-import { Navbar } from '../page'
+import Navbar from '@/components/navbar'
 
 export default function PublicAnalyzePage() {
   const router = useRouter()

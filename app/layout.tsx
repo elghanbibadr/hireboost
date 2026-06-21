@@ -45,7 +45,7 @@ export default function RootLayout({
         />
       </head>
       {/* 💡 Tip: You imported Geist fonts above, but if you're using DM Sans via Google Fonts, "font-sans" works perfectly assuming it's configured in your tailwind.config.js */}
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased min-h-screen bg-[#080808] text-white overflow-x-hidden">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
