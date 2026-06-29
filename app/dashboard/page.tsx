@@ -4,7 +4,7 @@ import { FileText, Zap, TrendingUp, Plus, Sparkles } from "lucide-react";
 import { StatCard } from "@/components/dashboard/state-card";
 import { createClient } from "@/lib/supabase/server";
 import DashboardChart from "@/components/dashboard/dashboard-chart";
-import History, { scoreLabel } from "@/components/dashboard/history";
+import History from "@/components/dashboard/history";
 
 export interface Analysis {
   id: string;
@@ -17,6 +17,12 @@ interface Profile {
   credits: number;
   full_name: string;
   email: string;
+}
+
+ function scoreLabel(n: number) {
+  if (n >= 75) return "Strong";
+  if (n >= 50) return "Moderate";
+  return "Weak";
 }
 
 export default async function DashboardPage() {
@@ -41,6 +47,7 @@ export default async function DashboardPage() {
   ]);
   const history = analyses ?? [];
 
+  
   const isPro = profile?.plan === "pro";
   const avgScore = analyses?.length
     ? Math.round(analyses?.reduce((s, a) => s + a.score, 0) / analyses?.length)

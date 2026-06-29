@@ -1,4 +1,5 @@
-import { scoreColor } from './dashboard-chart'
+"use client"
+
 import {
   FileText,
   Clock,
@@ -14,6 +15,14 @@ export function scoreLabel(n: number) {
   if (n >= 50) return "Moderate";
   return "Weak";
 }
+
+function scoreColor(n: number) {
+  if (n >= 75) return "#C8FF5E"; // Neon Green
+  if (n >= 50) return "#ca8a04"; // Gold/Amber
+  return "#ef4444"; // Red
+}
+
+
 
 const History = ({ analyses }: { analyses: Analysis[] }) => {
   return (
