@@ -1,42 +1,33 @@
-
-
+import dynamic from 'next/dynamic';
 import Navbar from "@/components/navbar";
 import { Hero } from "@/components/hero";
-import { SocialProofTicker } from "@/components/socialProofTicker";
-import { Features } from "@/components/features";
-import HowItWorks from "@/components/howItWorks";
-import Pricing from "@/components/pricing";
-import { Footer } from "@/components/footer";
-import Cta from "@/components/cta";
 import { createClient } from "@/lib/supabase/server";
 
-// ── Main page ─────────────────────────────────────────────────────────────────
- export default async function Home() {
-  const supabase =await  createClient();
-const { data: { user } } = await supabase.auth.getUser();
-   console.log("user",user)
+// Dynamic imports for elements beneath the fold
+const SocialProofTicker = dynamic(() => import("@/components/socialProofTicker").then(mod => mod.SocialProofTicker), { ssr: true });
+const Features = dynamic(() => import("@/components/features").then(mod => mod.Features));
+const HowItWorks = dynamic(() => import("@/components/howItWorks"));
+const Pricing = dynamic(() => import("@/components/pricing"));
+const Cta = dynamic(() => import("@/components/cta"));
+const Footer = dynamic(() => import("@/components/footer").then(mod => mod.Footer));
 
-const userName = user?.user_metadata?.full_name || user?.email || "Guest" 
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const userName = user?.user_metadata?.full_name || user?.email || "Guest";
+  
   return (
-    <>
+    // Wrap with your missing main landmark to clear the accessibility flag
+    <main className="min-h-screen bg-slate-50 antialiased">
       <Navbar user={user} />
       <Hero userName={userName} />
-
-
-      {/* ── SOCIAL PROOF TICKER ────────────────────────────────────────────── */}
       <SocialProofTicker />
-      {/* ── FEATURES ───────────────────────────────────────────────────────── */}
       <Features />
-      {/* ── HOW IT WORKS ───────────────────────────────────────────────────── */}
       <HowItWorks />
-
-      {/* ── PRICING ────────────────────────────────────────────────────────── */}
       <Pricing user={{ userName }} />
-
-      {/* ── CTA ────────────────────────────────────────────────────────────── */}
       <Cta />
-      {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
       <Footer />
-    </>
+    </main>
   );
 }
