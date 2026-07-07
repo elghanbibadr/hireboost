@@ -19,7 +19,7 @@ export default async function Home() {
   
   return (
     // Wrap with your missing main landmark to clear the accessibility flag
-    <main className="min-h-screen bg-slate-50 antialiased">
+    <main className="">
       <Navbar user={user} />
       <Hero userName={userName} />
       <SocialProofTicker />
