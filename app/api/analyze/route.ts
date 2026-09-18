@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     // --- NEW: Validation Step ---
     const validationCompletion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     // Run the main heavy analysis since inputs are valid
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
