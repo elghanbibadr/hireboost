@@ -55,10 +55,12 @@ export async function signUpAction(prevState: FormState, formData: FormData): Pr
     // Show a clean success state telling them to check their inbox.
     redirect('/verify-email?email=' + encodeURIComponent(formData.get('email') as string))
   }
-
-    if (error) {
-    return { error: error.message }
+if (error) {
+  if (error.name === 'AuthRetryableFetchError') {
+    redirect('/verify-email?email=' + encodeURIComponent(email))
   }
+  return { error: error.message }
+}
   // Fallback: If a session does exist (e.g., email confirmation is off), log them in
   if (data?.session) {
     redirect('/dashboard')
